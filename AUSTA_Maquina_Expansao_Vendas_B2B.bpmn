@@ -1,0 +1,1334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_AUSTA_ExpansaoVendas"
+                  targetNamespace="http://austa.com.br/bpmn/expansao-vendas"
+                  exporter="Camunda Modeler"
+                  exporterVersion="5.0.0">
+
+  <!-- ========================================================================
+       PROCESSO PRINCIPAL: MÁQUINA DE EXPANSÃO E VENDAS B2B
+       ======================================================================== -->
+  <bpmn:collaboration id="Collaboration_MaquinaExpansaoVendas">
+    <bpmn:documentation>
+      Máquina integrada de Expansão e Vendas B2B da Operadora AUSTA.
+      Integra os processos OPE-04, OPE-05, OPE-09 e OPE-11.
+      Objetivo: Acelerar crescimento, maximizar receita recorrente e lifetime value.
+    </bpmn:documentation>
+    
+    <!-- POOLS -->
+    <bpmn:participant id="Pool_MercadoProspects" name="Mercado e Prospects" processRef="Process_MercadoProspects"/>
+    <bpmn:participant id="Pool_ClienteCorporativo" name="Cliente Corporativo" processRef="Process_ClienteCorporativo"/>
+    <bpmn:participant id="Pool_MaquinaExpansaoVendas" name="AUSTA - Máquina de Expansão e Vendas B2B" processRef="Process_MaquinaExpansaoVendas"/>
+    <bpmn:participant id="Pool_SistemasIntegrados" name="Sistemas Integrados e Plataformas" processRef="Process_SistemasIntegrados"/>
+    
+    <!-- MESSAGE FLOWS -->
+    <bpmn:messageFlow id="MsgFlow_LeadInbound" name="Lead Inbound" sourceRef="Pool_MercadoProspects" targetRef="Event_LeadRecebido"/>
+    <bpmn:messageFlow id="MsgFlow_SolicitacaoProposta" name="Solicitação de Proposta" sourceRef="Pool_ClienteCorporativo" targetRef="Event_SolicitacaoPropostaRecebida"/>
+    <bpmn:messageFlow id="MsgFlow_EnvioPropostaCliente" name="Proposta Comercial" sourceRef="Task_EnviarPropostaCliente" targetRef="Pool_ClienteCorporativo"/>
+    <bpmn:messageFlow id="MsgFlow_FeedbackProposta" name="Feedback da Proposta" sourceRef="Pool_ClienteCorporativo" targetRef="Event_FeedbackPropostaRecebido"/>
+    <bpmn:messageFlow id="MsgFlow_ContratoAssinado" name="Contrato Assinado" sourceRef="Pool_ClienteCorporativo" targetRef="Event_ContratoAssinado"/>
+    <bpmn:messageFlow id="MsgFlow_ComunicacaoBeneficiarios" name="Comunicação aos Beneficiários" sourceRef="Task_ComunicarEngajarBeneficiarios" targetRef="Pool_ClienteCorporativo"/>
+    <bpmn:messageFlow id="MsgFlow_GoLiveConfirmacao" name="Confirmação Go-Live" sourceRef="Task_ExecutarGoLive" targetRef="Pool_ClienteCorporativo"/>
+    <bpmn:messageFlow id="MsgFlow_IntegracaoCRM" name="Integração CRM" sourceRef="SubProcess_VendasConsultivas" targetRef="Pool_SistemasIntegrados"/>
+    <bpmn:messageFlow id="MsgFlow_IntegracaoTasy" name="Integração Tasy ERP" sourceRef="SubProcess_Implantacao" targetRef="Pool_SistemasIntegrados"/>
+  </bpmn:collaboration>
+
+  <!-- ========================================================================
+       PROCESSO: MERCADO E PROSPECTS (Pool Externo - Black Box)
+       ======================================================================== -->
+  <bpmn:process id="Process_MercadoProspects" name="Mercado e Prospects" isExecutable="false">
+    <bpmn:documentation>Pool representando o mercado-alvo e prospects potenciais</bpmn:documentation>
+  </bpmn:process>
+
+  <!-- ========================================================================
+       PROCESSO: CLIENTE CORPORATIVO (Pool Externo - Black Box)
+       ======================================================================== -->
+  <bpmn:process id="Process_ClienteCorporativo" name="Cliente Corporativo" isExecutable="false">
+    <bpmn:documentation>Pool representando clientes corporativos (empresas >100 vidas)</bpmn:documentation>
+  </bpmn:process>
+
+  <!-- ========================================================================
+       PROCESSO: SISTEMAS INTEGRADOS (Pool Externo - Black Box)
+       ======================================================================== -->
+  <bpmn:process id="Process_SistemasIntegrados" name="Sistemas Integrados" isExecutable="false">
+    <bpmn:documentation>Pool representando CRM, Tasy ERP, Marketing Automation, Portais B2B</bpmn:documentation>
+  </bpmn:process>
+
+  <!-- ========================================================================
+       PROCESSO PRINCIPAL: MÁQUINA DE EXPANSÃO E VENDAS B2B
+       ======================================================================== -->
+  <bpmn:process id="Process_MaquinaExpansaoVendas" name="Máquina de Expansão e Vendas B2B" isExecutable="true">
+    <bpmn:documentation>
+      Processo end-to-end de Expansão e Vendas B2B integrando:
+      - OPE-04: Vendas Consultivas B2B e Gestão de Grandes Contas
+      - OPE-05: Desenvolvimento e Lançamento Ágil de Produtos
+      - OPE-09: Implantação e Onboarding de Novos Clientes
+      - OPE-11: Expansão Geográfica e Desenvolvimento de Mercados
+    </bpmn:documentation>
+
+    <!-- ====================================================================
+         LANES (Raias de Responsabilidade)
+         ==================================================================== -->
+    <bpmn:laneSet id="LaneSet_Principal">
+      
+      <bpmn:lane id="Lane_ExpansaoGeografica" name="Expansão Geográfica (OPE-11)">
+        <bpmn:documentation>Diretor de Expansão, VP de Operações (COO)</bpmn:documentation>
+        <bpmn:flowNodeRef>SubProcess_ExpansaoGeografica</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_InicioExpansao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_TipoExpansao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AvaliarMercadosAlvo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_MercadoViavel</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CredenciarPrestadoresChave</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RegistrarProdutosANS</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_NovaRegiaoHabilitada</bpmn:flowNodeRef>
+      </bpmn:lane>
+      
+      <bpmn:lane id="Lane_MarketingGeracao" name="Marketing e Geração de Demanda">
+        <bpmn:documentation>Gerente de Marketing, Coordenador de Marketing</bpmn:documentation>
+        <bpmn:flowNodeRef>SubProcess_GeracaoDemanda</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ExecutarCampanhasMarketing</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_GerarLeadsQualificados</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_NutrirLeadsMQL</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_LeadRecebido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_SolicitacaoPropostaRecebida</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>DataStore_CRM</bpmn:flowNodeRef>
+      </bpmn:lane>
+      
+      <bpmn:lane id="Lane_VendasConsultivas" name="Vendas Consultivas B2B (OPE-04)">
+        <bpmn:documentation>Gerente de Vendas, Coordenador de Vendas</bpmn:documentation>
+        <bpmn:flowNodeRef>SubProcess_VendasConsultivas</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_QualificarLeadsSAL</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_LeadQualificado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RealizarDiscoveryConsultivo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_DiagnosticoNecessidades</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_DesenvolverPropostaCustomizada</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_EnviarPropostaCliente</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_FeedbackPropostaRecebido</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_StatusProposta</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_NegociarCondicoes</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_DocumentarMotivoPerda</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_OportunidadePerdida</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>DataObject_Proposta</bpmn:flowNodeRef>
+      </bpmn:lane>
+      
+      <bpmn:lane id="Lane_GrandesContas" name="Gestão de Grandes Contas">
+        <bpmn:documentation>Gerente de Sucesso do Cliente</bpmn:documentation>
+        <bpmn:flowNodeRef>SubProcess_GestaoGrandesContas</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AcompanhamentoEstrategico</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_IdentificarOportunidadesCrossSell</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_GerirRenovacaoContrato</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_ContratoRenovado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_ExpansaoContrato</bpmn:flowNodeRef>
+      </bpmn:lane>
+      
+      <bpmn:lane id="Lane_ProdutoPricing" name="Produto e Pricing (OPE-05)">
+        <bpmn:documentation>Coordenador de Marketing, Gerente de Transformação Digital</bpmn:documentation>
+        <bpmn:flowNodeRef>SubProcess_DesenvolvimentoProdutos</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_PesquisaMercado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ConceberDesignProduto</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AnalisarViabilidade</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_ProdutoViavel</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_DesenvolverPrototipos</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_PrecificarProduto</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RegistrarProdutoANS</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_LancarProduto</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>DataObject_BusinessCase</bpmn:flowNodeRef>
+      </bpmn:lane>
+      
+      <bpmn:lane id="Lane_Precificacao" name="Precificação e Análise de Risco">
+        <bpmn:documentation>Gerente de Controle de Sinistros, Analista de Dados</bpmn:documentation>
+        <bpmn:flowNodeRef>Task_AnalisarRiscoProposta</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_PrecificarContrato</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_AprovacaoPrecoEspecial</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SolicitarAprovacaoDiretoria</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>DataObject_ModeloPrecificacao</bpmn:flowNodeRef>
+      </bpmn:lane>
+      
+      <bpmn:lane id="Lane_ImplantacaoOnboarding" name="Implantação e Onboarding (OPE-09)">
+        <bpmn:documentation>Gerente de Sucesso do Cliente, Coordenador de Sucesso do Cliente</bpmn:documentation>
+        <bpmn:flowNodeRef>SubProcess_Implantacao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_ContratoAssinado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_PlanejarImplantacao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CadastrarBeneficiarios</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ConfigurarRegrasSistemas</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_TreinarRHCliente</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ComunicarEngajarBeneficiarios</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ExecutarGoLive</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_GoLiveReadiness</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_TimerGoLive</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_MonitoramentoPosImplantacao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ColetarNPSImplantacao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_ImplantacaoConcluida</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>DataObject_CronogramaImplantacao</bpmn:flowNodeRef>
+      </bpmn:lane>
+      
+      <bpmn:lane id="Lane_BackofficeOperacoes" name="Backoffice e Operações">
+        <bpmn:documentation>Especialista de Cadastros e Regras, Coordenador de Regulação</bpmn:documentation>
+        <bpmn:flowNodeRef>Task_ValidarDadosCadastrais</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ConfigurarCoberturas</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_IntegrarSistemasCliente</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_DadosValidos</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_ErroValidacao</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CorrigirDadosInconsistentes</bpmn:flowNodeRef>
+      </bpmn:lane>
+      
+    </bpmn:laneSet>
+
+    <!-- ====================================================================
+         EVENTOS DE INÍCIO
+         ==================================================================== -->
+    <bpmn:startEvent id="Event_InicioExpansao" name="Início Ciclo Expansão">
+      <bpmn:documentation>Evento de início do ciclo de expansão - pode ser disparado por demanda estratégica ou análise de mercado</bpmn:documentation>
+      <bpmn:outgoing>Flow_InicioParaAvaliacao</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <bpmn:startEvent id="Event_LeadRecebido" name="Lead Recebido">
+      <bpmn:documentation>Lead inbound recebido via marketing, indicação, eventos ou canais digitais</bpmn:documentation>
+      <bpmn:outgoing>Flow_LeadParaQualificacao</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageDef_LeadRecebido" messageRef="Message_LeadInbound"/>
+    </bpmn:startEvent>
+    
+    <bpmn:startEvent id="Event_SolicitacaoPropostaRecebida" name="Solicitação de Proposta Recebida">
+      <bpmn:documentation>Solicitação direta de proposta comercial pelo cliente</bpmn:documentation>
+      <bpmn:outgoing>Flow_SolicitacaoParaDiscovery</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageDef_SolicitacaoProposta" messageRef="Message_SolicitacaoProposta"/>
+    </bpmn:startEvent>
+
+    <!-- ====================================================================
+         SUBPROCESSO: EXPANSÃO GEOGRÁFICA (OPE-11)
+         ==================================================================== -->
+    <bpmn:subProcess id="SubProcess_ExpansaoGeografica" name="Expansão Geográfica e Desenvolvimento de Mercados">
+      <bpmn:documentation>
+        Processo OPE-11: Metodologia estruturada para avaliação, entrada e consolidação em novos mercados.
+        KPI Estratégico: # VIDAS SOB CUIDADO
+        KPI Específico: # Vidas adicionadas em novas regiões nos últimos 90 dias
+      </bpmn:documentation>
+      <bpmn:incoming>Flow_InicioParaExpansao</bpmn:incoming>
+      <bpmn:outgoing>Flow_ExpansaoParaGeracaoDemanda</bpmn:outgoing>
+      
+      <bpmn:startEvent id="StartEvent_Expansao" name="Início Avaliação de Mercado"/>
+      
+      <bpmn:userTask id="Task_AvaliarMercadosAlvo" name="Avaliar Mercados-Alvo" camunda:assignee="diretor_expansao">
+        <bpmn:documentation>
+          Análise de potencial, concorrência, viabilidade e atratividade de novos mercados.
+          Saída: Mercados priorizados, business case
+        </bpmn:documentation>
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="mercado_alvo" label="Mercado-Alvo" type="string"/>
+            <camunda:formField id="potencial_vidas" label="Potencial de Vidas" type="long"/>
+            <camunda:formField id="concorrencia" label="Análise Concorrencial" type="string"/>
+            <camunda:formField id="viabilidade_score" label="Score de Viabilidade (1-10)" type="long"/>
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_StartExpansao</bpmn:incoming>
+        <bpmn:outgoing>Flow_AvaliacaoParaGateway</bpmn:outgoing>
+        <bpmn:dataOutputAssociation id="DataOutputAssoc_BusinessCase">
+          <bpmn:targetRef>DataObject_BusinessCase</bpmn:targetRef>
+        </bpmn:dataOutputAssociation>
+      </bpmn:userTask>
+      
+      <bpmn:exclusiveGateway id="Gateway_MercadoViavel" name="Mercado Viável?">
+        <bpmn:documentation>Decisão baseada no score de viabilidade e business case</bpmn:documentation>
+        <bpmn:incoming>Flow_AvaliacaoParaGateway</bpmn:incoming>
+        <bpmn:outgoing>Flow_MercadoViavel_Sim</bpmn:outgoing>
+        <bpmn:outgoing>Flow_MercadoViavel_Nao</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      
+      <bpmn:serviceTask id="Task_CredenciarPrestadoresChave" name="Credenciar Prestadores-Chave" camunda:delegateExpression="${credenciamentoPrestadoresService}">
+        <bpmn:documentation>
+          Identificação e contratação de prestadores essenciais para operação na nova região.
+          Medida de Direção: # de credenciamentos de prestadores-chave em novas regiões por trimestre
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_MercadoViavel_Sim</bpmn:incoming>
+        <bpmn:outgoing>Flow_CredenciamentoParaRegistro</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:userTask id="Task_RegistrarProdutosANS" name="Registrar Produtos na ANS" camunda:assignee="especialista_ans">
+        <bpmn:documentation>
+          Cumprimento de requisitos regulatórios e lançamento comercial.
+          Pré-requisito obrigatório para comercialização.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_CredenciamentoParaRegistro</bpmn:incoming>
+        <bpmn:outgoing>Flow_RegistroParaLancamento</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:endEvent id="Event_NovaRegiaoHabilitada" name="Nova Região Habilitada">
+        <bpmn:documentation>Região pronta para operação comercial</bpmn:documentation>
+        <bpmn:incoming>Flow_RegistroParaLancamento</bpmn:incoming>
+        <bpmn:signalEventDefinition id="SignalDef_RegiaoHabilitada" signalRef="Signal_RegiaoHabilitada"/>
+      </bpmn:endEvent>
+      
+      <bpmn:endEvent id="Event_MercadoDescartado" name="Mercado Descartado">
+        <bpmn:incoming>Flow_MercadoViavel_Nao</bpmn:incoming>
+      </bpmn:endEvent>
+      
+      <bpmn:sequenceFlow id="Flow_StartExpansao" sourceRef="StartEvent_Expansao" targetRef="Task_AvaliarMercadosAlvo"/>
+      <bpmn:sequenceFlow id="Flow_AvaliacaoParaGateway" sourceRef="Task_AvaliarMercadosAlvo" targetRef="Gateway_MercadoViavel"/>
+      <bpmn:sequenceFlow id="Flow_MercadoViavel_Sim" name="Sim (Score >= 7)" sourceRef="Gateway_MercadoViavel" targetRef="Task_CredenciarPrestadoresChave">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${viabilidade_score >= 7}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_MercadoViavel_Nao" name="Não (Score &lt; 7)" sourceRef="Gateway_MercadoViavel" targetRef="Event_MercadoDescartado">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${viabilidade_score &lt; 7}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_CredenciamentoParaRegistro" sourceRef="Task_CredenciarPrestadoresChave" targetRef="Task_RegistrarProdutosANS"/>
+      <bpmn:sequenceFlow id="Flow_RegistroParaLancamento" sourceRef="Task_RegistrarProdutosANS" targetRef="Event_NovaRegiaoHabilitada"/>
+    </bpmn:subProcess>
+
+    <!-- ====================================================================
+         SUBPROCESSO: GERAÇÃO DE DEMANDA E MARKETING
+         ==================================================================== -->
+    <bpmn:subProcess id="SubProcess_GeracaoDemanda" name="Geração de Demanda e Marketing">
+      <bpmn:documentation>
+        Subprocesso de geração de leads qualificados para o funil de vendas B2B.
+        Integração com CRM e Marketing Automation.
+      </bpmn:documentation>
+      <bpmn:incoming>Flow_ExpansaoParaGeracaoDemanda</bpmn:incoming>
+      <bpmn:outgoing>Flow_GeracaoParaVendas</bpmn:outgoing>
+      
+      <bpmn:startEvent id="StartEvent_GeracaoDemanda" name="Início Geração de Demanda"/>
+      
+      <bpmn:serviceTask id="Task_ExecutarCampanhasMarketing" name="Executar Campanhas de Marketing" camunda:delegateExpression="${marketingAutomationService}">
+        <bpmn:documentation>
+          Execução de campanhas de marketing para geração de leads.
+          Canais: Digital, Eventos, Indicações, Parcerias.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_StartGeracaoDemanda</bpmn:incoming>
+        <bpmn:outgoing>Flow_CampanhasParaLeads</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:serviceTask id="Task_GerarLeadsQualificados" name="Gerar Leads Qualificados (MQL)" camunda:delegateExpression="${leadScoringService}">
+        <bpmn:documentation>
+          Qualificação inicial de leads por critérios de marketing (MQL - Marketing Qualified Lead).
+          Scoring baseado em perfil, comportamento e interesse.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_CampanhasParaLeads</bpmn:incoming>
+        <bpmn:outgoing>Flow_LeadsParaNurturing</bpmn:outgoing>
+        <bpmn:dataOutputAssociation id="DataOutputAssoc_CRM">
+          <bpmn:targetRef>DataStore_CRM</bpmn:targetRef>
+        </bpmn:dataOutputAssociation>
+      </bpmn:serviceTask>
+      
+      <bpmn:serviceTask id="Task_NutrirLeadsMQL" name="Nutrir Leads (Lead Nurturing)" camunda:delegateExpression="${leadNurturingService}">
+        <bpmn:documentation>
+          Nutrição de leads através de conteúdo relevante até estarem prontos para vendas.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_LeadsParaNurturing</bpmn:incoming>
+        <bpmn:outgoing>Flow_NurturingParaFim</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:endEvent id="EndEvent_GeracaoDemanda" name="Leads Prontos para Vendas">
+        <bpmn:incoming>Flow_NurturingParaFim</bpmn:incoming>
+      </bpmn:endEvent>
+      
+      <bpmn:sequenceFlow id="Flow_StartGeracaoDemanda" sourceRef="StartEvent_GeracaoDemanda" targetRef="Task_ExecutarCampanhasMarketing"/>
+      <bpmn:sequenceFlow id="Flow_CampanhasParaLeads" sourceRef="Task_ExecutarCampanhasMarketing" targetRef="Task_GerarLeadsQualificados"/>
+      <bpmn:sequenceFlow id="Flow_LeadsParaNurturing" sourceRef="Task_GerarLeadsQualificados" targetRef="Task_NutrirLeadsMQL"/>
+      <bpmn:sequenceFlow id="Flow_NurturingParaFim" sourceRef="Task_NutrirLeadsMQL" targetRef="EndEvent_GeracaoDemanda"/>
+    </bpmn:subProcess>
+
+    <!-- ====================================================================
+         SUBPROCESSO: VENDAS CONSULTIVAS B2B (OPE-04)
+         ==================================================================== -->
+    <bpmn:subProcess id="SubProcess_VendasConsultivas" name="Vendas Consultivas B2B e Gestão de Grandes Contas">
+      <bpmn:documentation>
+        Processo OPE-04: Abordagem estruturada para prospecção, venda consultiva, implementação e fidelização de clientes corporativos.
+        KPI Estratégico: # VIDAS SOB CUIDADO
+        KPI Específico: Taxa de conversão de propostas para contratos (empresas >100 vidas)
+        Medidas de Direção:
+        - # de contatos qualificados realizados por vendedor por semana
+        - % de propostas enviadas dentro do prazo comprometido
+        - % de visitas em clientes com mais de 100 vidas por trimestre
+      </bpmn:documentation>
+      <bpmn:incoming>Flow_GeracaoParaVendas</bpmn:incoming>
+      <bpmn:incoming>Flow_LeadParaQualificacao</bpmn:incoming>
+      <bpmn:incoming>Flow_SolicitacaoParaDiscovery</bpmn:incoming>
+      <bpmn:outgoing>Flow_VendasParaImplantacao</bpmn:outgoing>
+      
+      <bpmn:startEvent id="StartEvent_Vendas" name="Início Qualificação"/>
+      
+      <!-- ETAPA 1: Qualificação de Leads -->
+      <bpmn:userTask id="Task_QualificarLeadsSAL" name="Qualificar Leads (SAL)" camunda:assignee="coordenador_vendas">
+        <bpmn:documentation>
+          Qualificação de leads pelo time de vendas (SAL - Sales Accepted Lead).
+          Critérios: Empresa >100 vidas, decisor identificado, budget, timing.
+          Medida de Direção: # de contatos qualificados realizados por vendedor por semana
+        </bpmn:documentation>
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="empresa_nome" label="Nome da Empresa" type="string" required="true"/>
+            <camunda:formField id="qtd_vidas" label="Quantidade de Vidas" type="long" required="true"/>
+            <camunda:formField id="decisor_nome" label="Nome do Decisor" type="string"/>
+            <camunda:formField id="bant_score" label="Score BANT (1-100)" type="long"/>
+            <camunda:formField id="lead_qualificado" label="Lead Qualificado?" type="boolean"/>
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_StartVendas</bpmn:incoming>
+        <bpmn:outgoing>Flow_QualificacaoParaGateway</bpmn:outgoing>
+        <bpmn:dataInputAssociation id="DataInputAssoc_CRM">
+          <bpmn:sourceRef>DataStore_CRM</bpmn:sourceRef>
+        </bpmn:dataInputAssociation>
+      </bpmn:userTask>
+      
+      <bpmn:exclusiveGateway id="Gateway_LeadQualificado" name="Lead Qualificado?">
+        <bpmn:documentation>
+          Critérios de qualificação:
+          - Empresa com mais de 100 vidas
+          - Score BANT >= 60
+          - Decisor identificado
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_QualificacaoParaGateway</bpmn:incoming>
+        <bpmn:outgoing>Flow_LeadQualificado_Sim</bpmn:outgoing>
+        <bpmn:outgoing>Flow_LeadQualificado_Nao</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      
+      <!-- ETAPA 2: Análise de Necessidades e Diagnóstico -->
+      <bpmn:userTask id="Task_RealizarDiscoveryConsultivo" name="Realizar Discovery Consultivo" camunda:assignee="gerente_vendas">
+        <bpmn:documentation>
+          Reunião de discovery para entendimento profundo das necessidades do cliente.
+          Metodologia de vendas consultivas.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_LeadQualificado_Sim</bpmn:incoming>
+        <bpmn:outgoing>Flow_DiscoveryParaDiagnostico</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:userTask id="Task_DiagnosticoNecessidades" name="Elaborar Diagnóstico de Necessidades" camunda:assignee="gerente_vendas">
+        <bpmn:documentation>
+          Análise detalhada das necessidades, desafios e contexto da empresa prospect.
+          O diagnóstico correto permite proposta de valor diferenciada e assertiva.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_DiscoveryParaDiagnostico</bpmn:incoming>
+        <bpmn:outgoing>Flow_DiagnosticoParaProposta</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 3: Desenvolvimento de Proposta Customizada -->
+      <bpmn:callActivity id="CallActivity_AnalisarRisco" name="Analisar Risco e Precificar" calledElement="Process_AnalisePrecificacao">
+        <bpmn:documentation>
+          Call Activity para análise de risco e precificação do contrato.
+          Integração com OPE-03 (Precificação Dinâmica e Gestão de Risco).
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_DiagnosticoParaProposta</bpmn:incoming>
+        <bpmn:outgoing>Flow_AnaliseParaProposta</bpmn:outgoing>
+      </bpmn:callActivity>
+      
+      <bpmn:userTask id="Task_DesenvolverPropostaCustomizada" name="Desenvolver Proposta Customizada" camunda:assignee="gerente_vendas">
+        <bpmn:documentation>
+          Elaboração de proposta técnica e comercial personalizada.
+          SLA: 48h para envio de propostas.
+          Medida de Direção: % de propostas enviadas dentro do prazo comprometido
+        </bpmn:documentation>
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="valor_proposta" label="Valor da Proposta (R$)" type="long"/>
+            <camunda:formField id="prazo_validade" label="Prazo de Validade (dias)" type="long"/>
+            <camunda:formField id="condicoes_especiais" label="Condições Especiais" type="string"/>
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_AnaliseParaProposta</bpmn:incoming>
+        <bpmn:outgoing>Flow_PropostaParaEnvio</bpmn:outgoing>
+        <bpmn:dataOutputAssociation id="DataOutputAssoc_Proposta">
+          <bpmn:targetRef>DataObject_Proposta</bpmn:targetRef>
+        </bpmn:dataOutputAssociation>
+      </bpmn:userTask>
+      
+      <bpmn:sendTask id="Task_EnviarPropostaCliente" name="Enviar Proposta ao Cliente" camunda:delegateExpression="${envioPropostaService}">
+        <bpmn:documentation>
+          Envio formal da proposta comercial ao cliente.
+          Registro no CRM e início do acompanhamento.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_PropostaParaEnvio</bpmn:incoming>
+        <bpmn:outgoing>Flow_EnvioParaFeedback</bpmn:outgoing>
+      </bpmn:sendTask>
+      
+      <!-- ETAPA 4: Negociação e Fechamento -->
+      <bpmn:intermediateCatchEvent id="Event_FeedbackPropostaRecebido" name="Feedback da Proposta Recebido">
+        <bpmn:documentation>Aguarda retorno do cliente sobre a proposta</bpmn:documentation>
+        <bpmn:incoming>Flow_EnvioParaFeedback</bpmn:incoming>
+        <bpmn:outgoing>Flow_FeedbackParaGateway</bpmn:outgoing>
+        <bpmn:messageEventDefinition id="MessageDef_FeedbackProposta" messageRef="Message_FeedbackProposta"/>
+      </bpmn:intermediateCatchEvent>
+      
+      <bpmn:exclusiveGateway id="Gateway_StatusProposta" name="Status da Proposta?">
+        <bpmn:incoming>Flow_FeedbackParaGateway</bpmn:incoming>
+        <bpmn:outgoing>Flow_Proposta_Aceita</bpmn:outgoing>
+        <bpmn:outgoing>Flow_Proposta_Negociacao</bpmn:outgoing>
+        <bpmn:outgoing>Flow_Proposta_Recusada</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      
+      <bpmn:userTask id="Task_NegociarCondicoes" name="Negociar Condições Comerciais" camunda:assignee="gerente_vendas">
+        <bpmn:documentation>
+          Negociação de condições comerciais especiais.
+          Alçada: Gerente de Vendas até R$ 1.000.000/ano; acima requer aprovação do VP de Operações.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_Proposta_Negociacao</bpmn:incoming>
+        <bpmn:outgoing>Flow_NegociacaoParaAprovacao</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:exclusiveGateway id="Gateway_AprovacaoPrecoEspecial" name="Requer Aprovação Especial?">
+        <bpmn:documentation>
+          Condições comerciais fora dos parâmetros padrão requerem aprovação do Diretor de Expansão.
+          Contratos > R$ 1.000.000 requerem aprovação do VP de Operações.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_NegociacaoParaAprovacao</bpmn:incoming>
+        <bpmn:outgoing>Flow_Aprovacao_Sim</bpmn:outgoing>
+        <bpmn:outgoing>Flow_Aprovacao_Nao</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      
+      <bpmn:userTask id="Task_SolicitarAprovacaoDiretoria" name="Solicitar Aprovação da Diretoria" camunda:candidateGroups="diretoria">
+        <bpmn:documentation>
+          Workflow de aprovação para condições especiais.
+          Limite de Autoridade: Contratos com receita anual acima de R$ 1.000.000 requerem aprovação do VP de Operações.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_Aprovacao_Sim</bpmn:incoming>
+        <bpmn:outgoing>Flow_AprovacaoParaFechamento</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:userTask id="Task_DocumentarMotivoPerda" name="Documentar Motivo da Perda" camunda:assignee="gerente_vendas">
+        <bpmn:documentation>
+          Registro dos motivos de perda para análise e melhoria do processo comercial.
+          Alimenta o ciclo de aprendizado e ajuste de propostas.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_Proposta_Recusada</bpmn:incoming>
+        <bpmn:outgoing>Flow_DocumentacaoParaFim</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:endEvent id="Event_OportunidadePerdida" name="Oportunidade Perdida">
+        <bpmn:incoming>Flow_DocumentacaoParaFim</bpmn:incoming>
+        <bpmn:incoming>Flow_LeadNaoQualificado</bpmn:incoming>
+      </bpmn:endEvent>
+      
+      <bpmn:endEvent id="EndEvent_ContratoFechado" name="Contrato Fechado - Aguardando Assinatura">
+        <bpmn:documentation>Contrato negociado e aprovado, aguardando assinatura do cliente</bpmn:documentation>
+        <bpmn:incoming>Flow_Proposta_Aceita</bpmn:incoming>
+        <bpmn:incoming>Flow_AprovacaoParaFechamento</bpmn:incoming>
+        <bpmn:incoming>Flow_Aprovacao_Nao</bpmn:incoming>
+        <bpmn:signalEventDefinition id="SignalDef_ContratoFechado" signalRef="Signal_ContratoFechado"/>
+      </bpmn:endEvent>
+      
+      <!-- Sequence Flows -->
+      <bpmn:sequenceFlow id="Flow_StartVendas" sourceRef="StartEvent_Vendas" targetRef="Task_QualificarLeadsSAL"/>
+      <bpmn:sequenceFlow id="Flow_QualificacaoParaGateway" sourceRef="Task_QualificarLeadsSAL" targetRef="Gateway_LeadQualificado"/>
+      <bpmn:sequenceFlow id="Flow_LeadQualificado_Sim" name="Sim (>100 vidas, BANT >= 60)" sourceRef="Gateway_LeadQualificado" targetRef="Task_RealizarDiscoveryConsultivo">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${lead_qualificado == true &amp;&amp; qtd_vidas > 100 &amp;&amp; bant_score >= 60}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_LeadNaoQualificado" name="Não Qualificado" sourceRef="Gateway_LeadQualificado" targetRef="Event_OportunidadePerdida">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${lead_qualificado == false || qtd_vidas &lt;= 100 || bant_score &lt; 60}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_DiscoveryParaDiagnostico" sourceRef="Task_RealizarDiscoveryConsultivo" targetRef="Task_DiagnosticoNecessidades"/>
+      <bpmn:sequenceFlow id="Flow_DiagnosticoParaProposta" sourceRef="Task_DiagnosticoNecessidades" targetRef="CallActivity_AnalisarRisco"/>
+      <bpmn:sequenceFlow id="Flow_AnaliseParaProposta" sourceRef="CallActivity_AnalisarRisco" targetRef="Task_DesenvolverPropostaCustomizada"/>
+      <bpmn:sequenceFlow id="Flow_PropostaParaEnvio" sourceRef="Task_DesenvolverPropostaCustomizada" targetRef="Task_EnviarPropostaCliente"/>
+      <bpmn:sequenceFlow id="Flow_EnvioParaFeedback" sourceRef="Task_EnviarPropostaCliente" targetRef="Event_FeedbackPropostaRecebido"/>
+      <bpmn:sequenceFlow id="Flow_FeedbackParaGateway" sourceRef="Event_FeedbackPropostaRecebido" targetRef="Gateway_StatusProposta"/>
+      <bpmn:sequenceFlow id="Flow_Proposta_Aceita" name="Aceita" sourceRef="Gateway_StatusProposta" targetRef="EndEvent_ContratoFechado">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${status_proposta == 'aceita'}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_Proposta_Negociacao" name="Em Negociação" sourceRef="Gateway_StatusProposta" targetRef="Task_NegociarCondicoes">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${status_proposta == 'negociacao'}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_Proposta_Recusada" name="Recusada" sourceRef="Gateway_StatusProposta" targetRef="Task_DocumentarMotivoPerda">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${status_proposta == 'recusada'}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_NegociacaoParaAprovacao" sourceRef="Task_NegociarCondicoes" targetRef="Gateway_AprovacaoPrecoEspecial"/>
+      <bpmn:sequenceFlow id="Flow_Aprovacao_Sim" name="Sim" sourceRef="Gateway_AprovacaoPrecoEspecial" targetRef="Task_SolicitarAprovacaoDiretoria">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${requer_aprovacao_especial == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_Aprovacao_Nao" name="Não" sourceRef="Gateway_AprovacaoPrecoEspecial" targetRef="EndEvent_ContratoFechado">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${requer_aprovacao_especial == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_AprovacaoParaFechamento" sourceRef="Task_SolicitarAprovacaoDiretoria" targetRef="EndEvent_ContratoFechado"/>
+      <bpmn:sequenceFlow id="Flow_DocumentacaoParaFim" sourceRef="Task_DocumentarMotivoPerda" targetRef="Event_OportunidadePerdida"/>
+    </bpmn:subProcess>
+
+    <!-- ====================================================================
+         SUBPROCESSO: IMPLANTAÇÃO E ONBOARDING (OPE-09)
+         ==================================================================== -->
+    <bpmn:subProcess id="SubProcess_Implantacao" name="Implantação e Onboarding de Novos Clientes">
+      <bpmn:documentation>
+        Processo OPE-09: Orquestração de todo o processo entre a venda e o início da operação em grandes clientes.
+        Objetivo: Garantir uma experiência positiva e de alto impacto.
+        KPI Estratégico: # NPS DOS GRANDES CLIENTES
+        KPI Específico: Tempo médio de implantação completa (dias)
+        Medidas de Direção:
+        - % de implantações concluídas no prazo acordado
+        - % de cadastros realizados sem erros na primeira tentativa
+        - NPS da experiência de implantação (primeiros 30 dias)
+      </bpmn:documentation>
+      <bpmn:incoming>Flow_VendasParaImplantacao</bpmn:incoming>
+      <bpmn:outgoing>Flow_ImplantacaoParaGestao</bpmn:outgoing>
+      
+      <bpmn:startEvent id="Event_ContratoAssinado" name="Contrato Assinado">
+        <bpmn:documentation>Início do processo de implantação após assinatura do contrato</bpmn:documentation>
+        <bpmn:outgoing>Flow_ContratoParaPlanejamento</bpmn:outgoing>
+        <bpmn:messageEventDefinition id="MessageDef_ContratoAssinado" messageRef="Message_ContratoAssinado"/>
+      </bpmn:startEvent>
+      
+      <!-- ETAPA 1: Planejamento da Transição -->
+      <bpmn:userTask id="Task_PlanejarImplantacao" name="Planejar Implantação e Cronograma" camunda:assignee="gerente_sucesso_cliente">
+        <bpmn:documentation>
+          Definição do plano de implantação, cronograma, responsáveis e marcos.
+          Planejamento adequado evita problemas e atrasos na implantação.
+        </bpmn:documentation>
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="data_inicio_implantacao" label="Data de Início" type="date"/>
+            <camunda:formField id="data_go_live_prevista" label="Data Go-Live Prevista" type="date"/>
+            <camunda:formField id="responsavel_cliente" label="Responsável no Cliente" type="string"/>
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_ContratoParaPlanejamento</bpmn:incoming>
+        <bpmn:outgoing>Flow_PlanejamentoParaCadastro</bpmn:outgoing>
+        <bpmn:dataOutputAssociation id="DataOutputAssoc_Cronograma">
+          <bpmn:targetRef>DataObject_CronogramaImplantacao</bpmn:targetRef>
+        </bpmn:dataOutputAssociation>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 2: Cadastramento de Beneficiários -->
+      <bpmn:parallelGateway id="Gateway_InicioParalelo" name="Início Atividades Paralelas">
+        <bpmn:incoming>Flow_PlanejamentoParaCadastro</bpmn:incoming>
+        <bpmn:outgoing>Flow_ParaleloCadastro</bpmn:outgoing>
+        <bpmn:outgoing>Flow_ParaleloConfiguracao</bpmn:outgoing>
+        <bpmn:outgoing>Flow_ParaleloTreinamento</bpmn:outgoing>
+      </bpmn:parallelGateway>
+      
+      <bpmn:userTask id="Task_CadastrarBeneficiarios" name="Cadastrar Beneficiários" camunda:assignee="especialista_cadastros">
+        <bpmn:documentation>
+          Cadastramento de beneficiários e validação de dados.
+          Medida de Direção: % de cadastros realizados sem erros na primeira tentativa
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_ParaleloCadastro</bpmn:incoming>
+        <bpmn:outgoing>Flow_CadastroParaValidacao</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:serviceTask id="Task_ValidarDadosCadastrais" name="Validar Dados Cadastrais" camunda:delegateExpression="${validacaoCadastralService}">
+        <bpmn:documentation>
+          Validação automática de dados cadastrais.
+          Verificação de CPF, dados de saúde, elegibilidade.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_CadastroParaValidacao</bpmn:incoming>
+        <bpmn:outgoing>Flow_ValidacaoParaGateway</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:exclusiveGateway id="Gateway_DadosValidos" name="Dados Válidos?">
+        <bpmn:incoming>Flow_ValidacaoParaGateway</bpmn:incoming>
+        <bpmn:outgoing>Flow_DadosValidos_Sim</bpmn:outgoing>
+        <bpmn:outgoing>Flow_DadosValidos_Nao</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      
+      <bpmn:userTask id="Task_CorrigirDadosInconsistentes" name="Corrigir Dados Inconsistentes" camunda:assignee="especialista_cadastros">
+        <bpmn:documentation>Correção de dados cadastrais inconsistentes</bpmn:documentation>
+        <bpmn:incoming>Flow_DadosValidos_Nao</bpmn:incoming>
+        <bpmn:outgoing>Flow_CorrecaoParaValidacao</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 3: Configuração de Regras e Sistemas -->
+      <bpmn:serviceTask id="Task_ConfigurarRegrasSistemas" name="Configurar Regras e Sistemas" camunda:delegateExpression="${configuracaoSistemasService}">
+        <bpmn:documentation>
+          Configuração de regras, coberturas e sistemas.
+          Integração com Tasy ERP e sistemas de autorização.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_ParaleloConfiguracao</bpmn:incoming>
+        <bpmn:outgoing>Flow_ConfiguracaoParaFim</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:serviceTask id="Task_ConfigurarCoberturas" name="Configurar Coberturas e Carências" camunda:delegateExpression="${configuracaoCoberturasService}">
+        <bpmn:documentation>
+          Parametrização de coberturas contratuais, carências e regras de autorização.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_ConfiguracaoParaFim</bpmn:incoming>
+        <bpmn:outgoing>Flow_CoberturasParaIntegracao</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:serviceTask id="Task_IntegrarSistemasCliente" name="Integrar Sistemas do Cliente" camunda:delegateExpression="${integracaoSistemasService}">
+        <bpmn:documentation>
+          Integração com sistemas de RH e folha de pagamento do cliente.
+          APIs de integração para sincronização de dados.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_CoberturasParaIntegracao</bpmn:incoming>
+        <bpmn:outgoing>Flow_IntegracaoParaFim</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <!-- ETAPA 4: Treinamento e Capacitação -->
+      <bpmn:userTask id="Task_TreinarRHCliente" name="Treinar e Capacitar RH do Cliente" camunda:assignee="coordenador_sucesso_cliente">
+        <bpmn:documentation>
+          Treinamento e capacitação de RH do cliente.
+          Apresentação de portais, processos e canais de atendimento.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_ParaleloTreinamento</bpmn:incoming>
+        <bpmn:outgoing>Flow_TreinamentoParaComunicacao</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 5: Comunicação e Engajamento -->
+      <bpmn:sendTask id="Task_ComunicarEngajarBeneficiarios" name="Comunicar e Engajar Beneficiários" camunda:delegateExpression="${comunicacaoBeneficiariosService}">
+        <bpmn:documentation>
+          Comunicação aos beneficiários sobre o novo plano.
+          Kits de boas-vindas, apresentação de canais e benefícios.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_TreinamentoParaComunicacao</bpmn:incoming>
+        <bpmn:outgoing>Flow_ComunicacaoParaFim</bpmn:outgoing>
+      </bpmn:sendTask>
+      
+      <!-- Sincronização das atividades paralelas -->
+      <bpmn:parallelGateway id="Gateway_FimParalelo" name="Sincronização Atividades">
+        <bpmn:incoming>Flow_DadosValidos_Sim</bpmn:incoming>
+        <bpmn:incoming>Flow_IntegracaoParaFim</bpmn:incoming>
+        <bpmn:incoming>Flow_ComunicacaoParaFim</bpmn:incoming>
+        <bpmn:outgoing>Flow_SincronizacaoParaGoLive</bpmn:outgoing>
+      </bpmn:parallelGateway>
+      
+      <!-- ETAPA 6: Go-Live e Monitoramento -->
+      <bpmn:exclusiveGateway id="Gateway_GoLiveReadiness" name="Pronto para Go-Live?">
+        <bpmn:documentation>
+          Verificação de critérios de go/no-go:
+          - Cadastros validados
+          - Sistemas configurados
+          - Treinamentos realizados
+          - Comunicação enviada
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_SincronizacaoParaGoLive</bpmn:incoming>
+        <bpmn:outgoing>Flow_GoLive_Sim</bpmn:outgoing>
+        <bpmn:outgoing>Flow_GoLive_Nao</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      
+      <bpmn:intermediateCatchEvent id="Event_TimerGoLive" name="Aguardar Data de Go-Live">
+        <bpmn:documentation>Timer para aguardar data de go-live programada</bpmn:documentation>
+        <bpmn:incoming>Flow_GoLive_Sim</bpmn:incoming>
+        <bpmn:outgoing>Flow_TimerParaGoLive</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TimerDef_GoLive">
+          <bpmn:timeDate xsi:type="bpmn:tFormalExpression">${data_go_live_prevista}</bpmn:timeDate>
+        </bpmn:timerEventDefinition>
+      </bpmn:intermediateCatchEvent>
+      
+      <bpmn:serviceTask id="Task_ExecutarGoLive" name="Executar Go-Live" camunda:delegateExpression="${goLiveService}">
+        <bpmn:documentation>
+          Ativação do contrato e início da operação.
+          Liberação de acessos e início da cobertura.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_TimerParaGoLive</bpmn:incoming>
+        <bpmn:outgoing>Flow_GoLiveParaMonitoramento</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:userTask id="Task_MonitoramentoPosImplantacao" name="Monitoramento Pós-Implantação" camunda:assignee="coordenador_sucesso_cliente">
+        <bpmn:documentation>
+          Acompanhamento das primeiras semanas de operação.
+          Identificação e resolução de problemas.
+          Medida de Direção: % de implantações concluídas no prazo acordado
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_GoLiveParaMonitoramento</bpmn:incoming>
+        <bpmn:outgoing>Flow_MonitoramentoParaNPS</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:serviceTask id="Task_ColetarNPSImplantacao" name="Coletar NPS da Implantação" camunda:delegateExpression="${npsService}">
+        <bpmn:documentation>
+          Pesquisa de satisfação aos 30 dias pós-go-live.
+          Medida de Direção: NPS da experiência de implantação (primeiros 30 dias)
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_MonitoramentoParaNPS</bpmn:incoming>
+        <bpmn:outgoing>Flow_NPSParaFim</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:endEvent id="Event_ImplantacaoConcluida" name="Implantação Concluída">
+        <bpmn:documentation>Implantação finalizada com sucesso. Cliente em operação.</bpmn:documentation>
+        <bpmn:incoming>Flow_NPSParaFim</bpmn:incoming>
+        <bpmn:signalEventDefinition id="SignalDef_ImplantacaoConcluida" signalRef="Signal_ImplantacaoConcluida"/>
+      </bpmn:endEvent>
+      
+      <bpmn:boundaryEvent id="Event_ErroValidacao" name="Erro de Validação" attachedToRef="Task_ValidarDadosCadastrais">
+        <bpmn:outgoing>Flow_ErroParaCorrecao</bpmn:outgoing>
+        <bpmn:errorEventDefinition id="ErrorDef_Validacao" errorRef="Error_ValidacaoCadastral"/>
+      </bpmn:boundaryEvent>
+      
+      <!-- Sequence Flows -->
+      <bpmn:sequenceFlow id="Flow_ContratoParaPlanejamento" sourceRef="Event_ContratoAssinado" targetRef="Task_PlanejarImplantacao"/>
+      <bpmn:sequenceFlow id="Flow_PlanejamentoParaCadastro" sourceRef="Task_PlanejarImplantacao" targetRef="Gateway_InicioParalelo"/>
+      <bpmn:sequenceFlow id="Flow_ParaleloCadastro" sourceRef="Gateway_InicioParalelo" targetRef="Task_CadastrarBeneficiarios"/>
+      <bpmn:sequenceFlow id="Flow_ParaleloConfiguracao" sourceRef="Gateway_InicioParalelo" targetRef="Task_ConfigurarRegrasSistemas"/>
+      <bpmn:sequenceFlow id="Flow_ParaleloTreinamento" sourceRef="Gateway_InicioParalelo" targetRef="Task_TreinarRHCliente"/>
+      <bpmn:sequenceFlow id="Flow_CadastroParaValidacao" sourceRef="Task_CadastrarBeneficiarios" targetRef="Task_ValidarDadosCadastrais"/>
+      <bpmn:sequenceFlow id="Flow_ValidacaoParaGateway" sourceRef="Task_ValidarDadosCadastrais" targetRef="Gateway_DadosValidos"/>
+      <bpmn:sequenceFlow id="Flow_DadosValidos_Sim" name="Sim" sourceRef="Gateway_DadosValidos" targetRef="Gateway_FimParalelo">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${dados_validos == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_DadosValidos_Nao" name="Não" sourceRef="Gateway_DadosValidos" targetRef="Task_CorrigirDadosInconsistentes">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${dados_validos == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_CorrecaoParaValidacao" sourceRef="Task_CorrigirDadosInconsistentes" targetRef="Task_ValidarDadosCadastrais"/>
+      <bpmn:sequenceFlow id="Flow_ConfiguracaoParaFim" sourceRef="Task_ConfigurarRegrasSistemas" targetRef="Task_ConfigurarCoberturas"/>
+      <bpmn:sequenceFlow id="Flow_CoberturasParaIntegracao" sourceRef="Task_ConfigurarCoberturas" targetRef="Task_IntegrarSistemasCliente"/>
+      <bpmn:sequenceFlow id="Flow_IntegracaoParaFim" sourceRef="Task_IntegrarSistemasCliente" targetRef="Gateway_FimParalelo"/>
+      <bpmn:sequenceFlow id="Flow_TreinamentoParaComunicacao" sourceRef="Task_TreinarRHCliente" targetRef="Task_ComunicarEngajarBeneficiarios"/>
+      <bpmn:sequenceFlow id="Flow_ComunicacaoParaFim" sourceRef="Task_ComunicarEngajarBeneficiarios" targetRef="Gateway_FimParalelo"/>
+      <bpmn:sequenceFlow id="Flow_SincronizacaoParaGoLive" sourceRef="Gateway_FimParalelo" targetRef="Gateway_GoLiveReadiness"/>
+      <bpmn:sequenceFlow id="Flow_GoLive_Sim" name="Sim" sourceRef="Gateway_GoLiveReadiness" targetRef="Event_TimerGoLive">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${go_live_ready == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_GoLive_Nao" name="Não - Pendências" sourceRef="Gateway_GoLiveReadiness" targetRef="Task_PlanejarImplantacao">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${go_live_ready == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_TimerParaGoLive" sourceRef="Event_TimerGoLive" targetRef="Task_ExecutarGoLive"/>
+      <bpmn:sequenceFlow id="Flow_GoLiveParaMonitoramento" sourceRef="Task_ExecutarGoLive" targetRef="Task_MonitoramentoPosImplantacao"/>
+      <bpmn:sequenceFlow id="Flow_MonitoramentoParaNPS" sourceRef="Task_MonitoramentoPosImplantacao" targetRef="Task_ColetarNPSImplantacao"/>
+      <bpmn:sequenceFlow id="Flow_NPSParaFim" sourceRef="Task_ColetarNPSImplantacao" targetRef="Event_ImplantacaoConcluida"/>
+      <bpmn:sequenceFlow id="Flow_ErroParaCorrecao" sourceRef="Event_ErroValidacao" targetRef="Task_CorrigirDadosInconsistentes"/>
+    </bpmn:subProcess>
+
+    <!-- ====================================================================
+         SUBPROCESSO: GESTÃO DE GRANDES CONTAS (OPE-04 - Pós-Venda)
+         ==================================================================== -->
+    <bpmn:subProcess id="SubProcess_GestaoGrandesContas" name="Gestão Estratégica de Grandes Contas">
+      <bpmn:documentation>
+        Subprocesso de gestão contínua de grandes contas.
+        Etapas 5 e 6 do OPE-04: Acompanhamento estratégico e Renovação/Expansão.
+        Medida de Direção: % de visitas em clientes com mais de 100 vidas por trimestre
+      </bpmn:documentation>
+      <bpmn:incoming>Flow_ImplantacaoParaGestao</bpmn:incoming>
+      <bpmn:outgoing>Flow_GestaoParaExpansao</bpmn:outgoing>
+      
+      <bpmn:startEvent id="StartEvent_GestaoContas" name="Início Gestão de Conta"/>
+      
+      <!-- ETAPA 5: Acompanhamento Estratégico -->
+      <bpmn:userTask id="Task_AcompanhamentoEstrategico" name="Acompanhamento Estratégico de Conta" camunda:assignee="gerente_sucesso_cliente">
+        <bpmn:documentation>
+          Relacionamento regular com grandes clientes.
+          Visitas trimestrais, Business Reviews, análise de indicadores.
+          Medida de Direção: % de visitas em clientes com mais de 100 vidas por trimestre
+        </bpmn:documentation>
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="ultima_visita" label="Data da Última Visita" type="date"/>
+            <camunda:formField id="satisfacao_cliente" label="Satisfação do Cliente (1-10)" type="long"/>
+            <camunda:formField id="oportunidades_identificadas" label="Oportunidades Identificadas" type="string"/>
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_StartGestao</bpmn:incoming>
+        <bpmn:outgoing>Flow_AcompanhamentoParaCrossSell</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:userTask id="Task_IdentificarOportunidadesCrossSell" name="Identificar Oportunidades Cross-Sell/Up-Sell" camunda:assignee="gerente_sucesso_cliente">
+        <bpmn:documentation>
+          Identificação de oportunidades de expansão de contrato.
+          Análise de filiais, subsidiárias, novos produtos.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_AcompanhamentoParaCrossSell</bpmn:incoming>
+        <bpmn:outgoing>Flow_CrossSellParaRenovacao</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 6: Renovação e Expansão -->
+      <bpmn:userTask id="Task_GerirRenovacaoContrato" name="Gerir Renovação de Contrato" camunda:assignee="gerente_vendas">
+        <bpmn:documentation>
+          Gestão do processo de renovação contratual.
+          Análise de sinistralidade, reajuste, renegociação.
+          A renovação garante receita recorrente e a expansão aumenta o ticket médio.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_CrossSellParaRenovacao</bpmn:incoming>
+        <bpmn:outgoing>Flow_RenovacaoParaGateway</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:exclusiveGateway id="Gateway_ExpansaoContrato" name="Oportunidade de Expansão?">
+        <bpmn:incoming>Flow_RenovacaoParaGateway</bpmn:incoming>
+        <bpmn:outgoing>Flow_Expansao_Sim</bpmn:outgoing>
+        <bpmn:outgoing>Flow_Expansao_Nao</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      
+      <bpmn:endEvent id="Event_ContratoRenovado" name="Contrato Renovado">
+        <bpmn:incoming>Flow_Expansao_Nao</bpmn:incoming>
+      </bpmn:endEvent>
+      
+      <bpmn:endEvent id="Event_ContratoExpandido" name="Contrato Expandido">
+        <bpmn:documentation>Cross-sell/up-sell realizado - reinicia ciclo de implantação para novas vidas</bpmn:documentation>
+        <bpmn:incoming>Flow_Expansao_Sim</bpmn:incoming>
+        <bpmn:signalEventDefinition id="SignalDef_ContratoExpandido" signalRef="Signal_ContratoExpandido"/>
+      </bpmn:endEvent>
+      
+      <bpmn:sequenceFlow id="Flow_StartGestao" sourceRef="StartEvent_GestaoContas" targetRef="Task_AcompanhamentoEstrategico"/>
+      <bpmn:sequenceFlow id="Flow_AcompanhamentoParaCrossSell" sourceRef="Task_AcompanhamentoEstrategico" targetRef="Task_IdentificarOportunidadesCrossSell"/>
+      <bpmn:sequenceFlow id="Flow_CrossSellParaRenovacao" sourceRef="Task_IdentificarOportunidadesCrossSell" targetRef="Task_GerirRenovacaoContrato"/>
+      <bpmn:sequenceFlow id="Flow_RenovacaoParaGateway" sourceRef="Task_GerirRenovacaoContrato" targetRef="Gateway_ExpansaoContrato"/>
+      <bpmn:sequenceFlow id="Flow_Expansao_Sim" name="Sim" sourceRef="Gateway_ExpansaoContrato" targetRef="Event_ContratoExpandido">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${oportunidade_expansao == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_Expansao_Nao" name="Não" sourceRef="Gateway_ExpansaoContrato" targetRef="Event_ContratoRenovado">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${oportunidade_expansao == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+    </bpmn:subProcess>
+
+    <!-- ====================================================================
+         SUBPROCESSO: DESENVOLVIMENTO DE PRODUTOS (OPE-05)
+         ==================================================================== -->
+    <bpmn:subProcess id="SubProcess_DesenvolvimentoProdutos" name="Desenvolvimento e Lançamento Ágil de Produtos" triggeredByEvent="true">
+      <bpmn:documentation>
+        Processo OPE-05: Processo sistemático para identificação de oportunidades, concepção, desenvolvimento, teste e lançamento de novos produtos.
+        KPI Estratégico: % RECEITA COM NOVOS PRODUTOS
+        KPI Específico: Time-to-market de novos produtos (dias)
+        Medidas de Direção:
+        - # de etapas do desenvolvimento de produto concluídas por mês
+        - % do cronograma de desenvolvimento cumprido dentro do prazo
+        - # de protótipos testados com clientes potenciais por trimestre
+      </bpmn:documentation>
+      
+      <bpmn:startEvent id="StartEvent_Produto" name="Demanda de Novo Produto Identificada">
+        <bpmn:signalEventDefinition id="SignalDef_DemandaProduto" signalRef="Signal_DemandaProduto"/>
+      </bpmn:startEvent>
+      
+      <!-- ETAPA 1: Pesquisa de Mercado -->
+      <bpmn:userTask id="Task_PesquisaMercado" name="Pesquisa de Mercado e Identificação de Oportunidades" camunda:assignee="coordenador_marketing">
+        <bpmn:documentation>
+          Análise de tendências, necessidades não atendidas e oportunidades de mercado.
+          Define a direção do desenvolvimento e evita investimentos em produtos sem demanda.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_StartProduto</bpmn:incoming>
+        <bpmn:outgoing>Flow_PesquisaParaConcepcao</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 2: Concepção e Design -->
+      <bpmn:userTask id="Task_ConceberDesignProduto" name="Conceber e Desenhar Produto" camunda:assignee="gerente_transformacao_digital">
+        <bpmn:documentation>
+          Concepção e design do novo produto ou serviço.
+          Definição de features, benefícios, diferenciação.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_PesquisaParaConcepcao</bpmn:incoming>
+        <bpmn:outgoing>Flow_ConcepcaoParaViabilidade</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 3: Análise de Viabilidade -->
+      <bpmn:userTask id="Task_AnalisarViabilidade" name="Analisar Viabilidade Técnica e Financeira" camunda:candidateGroups="produtos">
+        <bpmn:documentation>
+          Análise de viabilidade técnica, regulatória e financeira.
+          Elaboração de business case para aprovação.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_ConcepcaoParaViabilidade</bpmn:incoming>
+        <bpmn:outgoing>Flow_ViabilidadeParaGateway</bpmn:outgoing>
+        <bpmn:dataOutputAssociation id="DataOutputAssoc_BusinessCase2">
+          <bpmn:targetRef>DataObject_BusinessCase</bpmn:targetRef>
+        </bpmn:dataOutputAssociation>
+      </bpmn:userTask>
+      
+      <bpmn:exclusiveGateway id="Gateway_ProdutoViavel" name="Produto Viável?">
+        <bpmn:incoming>Flow_ViabilidadeParaGateway</bpmn:incoming>
+        <bpmn:outgoing>Flow_ProdutoViavel_Sim</bpmn:outgoing>
+        <bpmn:outgoing>Flow_ProdutoViavel_Nao</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      
+      <!-- ETAPA 4: Desenvolvimento de Protótipos -->
+      <bpmn:userTask id="Task_DesenvolverPrototipos" name="Desenvolver Protótipos e Testar" camunda:assignee="coordenador_projetos_ageis">
+        <bpmn:documentation>
+          Desenvolvimento de protótipos e validação com clientes.
+          Metodologia ágil, early adopters, coleta de feedback.
+          Medida de Direção: # de protótipos testados com clientes potenciais por trimestre
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_ProdutoViavel_Sim</bpmn:incoming>
+        <bpmn:outgoing>Flow_PrototiposParaPrecificacao</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 5: Precificação e Registro -->
+      <bpmn:userTask id="Task_PrecificarProduto" name="Precificar Produto" camunda:assignee="gerente_controle_sinistros">
+        <bpmn:documentation>
+          Precificação do novo produto com base em análise atuarial.
+          Modelagem de custos, sinistralidade esperada, margem.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_PrototiposParaPrecificacao</bpmn:incoming>
+        <bpmn:outgoing>Flow_PrecificacaoParaRegistro</bpmn:outgoing>
+        <bpmn:dataOutputAssociation id="DataOutputAssoc_Precificacao">
+          <bpmn:targetRef>DataObject_ModeloPrecificacao</bpmn:targetRef>
+        </bpmn:dataOutputAssociation>
+      </bpmn:userTask>
+      
+      <bpmn:userTask id="Task_RegistrarProdutoANS" name="Registrar Produto na ANS" camunda:assignee="especialista_ans">
+        <bpmn:documentation>
+          Registro do produto na ANS conforme requisitos regulatórios.
+          Pré-requisito obrigatório para comercialização.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_PrecificacaoParaRegistro</bpmn:incoming>
+        <bpmn:outgoing>Flow_RegistroParaLancamento</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <!-- ETAPA 6: Lançamento -->
+      <bpmn:serviceTask id="Task_LancarProduto" name="Lançar Produto no Mercado" camunda:delegateExpression="${lancamentoProdutoService}">
+        <bpmn:documentation>
+          Comercialização do produto e acompanhamento de resultados.
+          O sucesso do lançamento determina a adoção do produto pelo mercado.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_RegistroParaLancamento</bpmn:incoming>
+        <bpmn:outgoing>Flow_LancamentoParaFim</bpmn:outgoing>
+      </bpmn:serviceTask>
+      
+      <bpmn:endEvent id="Event_ProdutoLancado" name="Produto Lançado">
+        <bpmn:incoming>Flow_LancamentoParaFim</bpmn:incoming>
+      </bpmn:endEvent>
+      
+      <bpmn:endEvent id="Event_ProdutoDescartado" name="Produto Descartado">
+        <bpmn:incoming>Flow_ProdutoViavel_Nao</bpmn:incoming>
+      </bpmn:endEvent>
+      
+      <bpmn:sequenceFlow id="Flow_StartProduto" sourceRef="StartEvent_Produto" targetRef="Task_PesquisaMercado"/>
+      <bpmn:sequenceFlow id="Flow_PesquisaParaConcepcao" sourceRef="Task_PesquisaMercado" targetRef="Task_ConceberDesignProduto"/>
+      <bpmn:sequenceFlow id="Flow_ConcepcaoParaViabilidade" sourceRef="Task_ConceberDesignProduto" targetRef="Task_AnalisarViabilidade"/>
+      <bpmn:sequenceFlow id="Flow_ViabilidadeParaGateway" sourceRef="Task_AnalisarViabilidade" targetRef="Gateway_ProdutoViavel"/>
+      <bpmn:sequenceFlow id="Flow_ProdutoViavel_Sim" name="Sim" sourceRef="Gateway_ProdutoViavel" targetRef="Task_DesenvolverPrototipos">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${produto_viavel == true}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_ProdutoViavel_Nao" name="Não" sourceRef="Gateway_ProdutoViavel" targetRef="Event_ProdutoDescartado">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${produto_viavel == false}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_PrototiposParaPrecificacao" sourceRef="Task_DesenvolverPrototipos" targetRef="Task_PrecificarProduto"/>
+      <bpmn:sequenceFlow id="Flow_PrecificacaoParaRegistro" sourceRef="Task_PrecificarProduto" targetRef="Task_RegistrarProdutoANS"/>
+      <bpmn:sequenceFlow id="Flow_RegistroParaLancamento" sourceRef="Task_RegistrarProdutoANS" targetRef="Task_LancarProduto"/>
+      <bpmn:sequenceFlow id="Flow_LancamentoParaFim" sourceRef="Task_LancarProduto" targetRef="Event_ProdutoLancado"/>
+    </bpmn:subProcess>
+
+    <!-- ====================================================================
+         MONITORAMENTO DE RAMP-UP (OPE-11)
+         ==================================================================== -->
+    <bpmn:subProcess id="SubProcess_MonitoramentoRampUp" name="Monitoramento de Ramp-Up" triggeredByEvent="true">
+      <bpmn:documentation>
+        Subprocesso de monitoramento do ramp-up de operação em novas regiões.
+        Acompanhamento de vendas, satisfação e ajustes.
+      </bpmn:documentation>
+      
+      <bpmn:startEvent id="StartEvent_RampUp" name="Início Monitoramento Ramp-Up">
+        <bpmn:signalEventDefinition id="SignalDef_RampUp" signalRef="Signal_RegiaoHabilitada"/>
+      </bpmn:startEvent>
+      
+      <bpmn:userTask id="Task_MonitorarRampUp" name="Monitorar Ramp-Up de Operação" camunda:assignee="diretor_expansao">
+        <bpmn:documentation>
+          Acompanhamento da evolução da operação nos primeiros meses.
+          Indicadores de vendas, operação, satisfação.
+          Permite ajustes rápidos e correção de curso.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_StartRampUp</bpmn:incoming>
+        <bpmn:outgoing>Flow_MonitorarParaAjustes</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:userTask id="Task_AjustarOperacao" name="Ajustar Operação" camunda:candidateGroups="expansao">
+        <bpmn:documentation>
+          Implementação de ajustes baseados no monitoramento.
+          Correções de rede, pricing, comercial.
+        </bpmn:documentation>
+        <bpmn:incoming>Flow_MonitorarParaAjustes</bpmn:incoming>
+        <bpmn:outgoing>Flow_AjustesParaFim</bpmn:outgoing>
+      </bpmn:userTask>
+      
+      <bpmn:endEvent id="Event_RampUpConcluido" name="Ramp-Up Concluído">
+        <bpmn:incoming>Flow_AjustesParaFim</bpmn:incoming>
+      </bpmn:endEvent>
+      
+      <bpmn:sequenceFlow id="Flow_StartRampUp" sourceRef="StartEvent_RampUp" targetRef="Task_MonitorarRampUp"/>
+      <bpmn:sequenceFlow id="Flow_MonitorarParaAjustes" sourceRef="Task_MonitorarRampUp" targetRef="Task_AjustarOperacao"/>
+      <bpmn:sequenceFlow id="Flow_AjustesParaFim" sourceRef="Task_AjustarOperacao" targetRef="Event_RampUpConcluido"/>
+    </bpmn:subProcess>
+
+    <!-- ====================================================================
+         DATA OBJECTS E DATA STORES
+         ==================================================================== -->
+    <bpmn:dataStoreReference id="DataStore_CRM" name="CRM (Salesforce/HubSpot)">
+      <bpmn:documentation>
+        Sistema de CRM integrado para gestão de leads, oportunidades, propostas e clientes.
+        Integração com marketing automation e pipeline de vendas.
+      </bpmn:documentation>
+    </bpmn:dataStoreReference>
+    
+    <bpmn:dataObjectReference id="DataObject_Proposta" name="Proposta Comercial" dataObjectRef="DataObject_PropostaRef">
+      <bpmn:documentation>
+        Documento de proposta comercial customizada.
+        Inclui: condições técnicas, comerciais, cronograma, SLA.
+      </bpmn:documentation>
+    </bpmn:dataObjectReference>
+    <bpmn:dataObject id="DataObject_PropostaRef"/>
+    
+    <bpmn:dataObjectReference id="DataObject_BusinessCase" name="Business Case" dataObjectRef="DataObject_BusinessCaseRef">
+      <bpmn:documentation>
+        Documento de análise de viabilidade de mercado ou produto.
+        Inclui: potencial, concorrência, investimento, ROI.
+      </bpmn:documentation>
+    </bpmn:dataObjectReference>
+    <bpmn:dataObject id="DataObject_BusinessCaseRef"/>
+    
+    <bpmn:dataObjectReference id="DataObject_ModeloPrecificacao" name="Modelo de Precificação" dataObjectRef="DataObject_ModeloPrecificacaoRef">
+      <bpmn:documentation>
+        Modelo atuarial de precificação.
+        Inclui: análise de risco, sinistralidade projetada, margem.
+      </bpmn:documentation>
+    </bpmn:dataObjectReference>
+    <bpmn:dataObject id="DataObject_ModeloPrecificacaoRef"/>
+    
+    <bpmn:dataObjectReference id="DataObject_CronogramaImplantacao" name="Cronograma de Implantação" dataObjectRef="DataObject_CronogramaRef">
+      <bpmn:documentation>
+        Plano de projeto de implantação.
+        Inclui: cronograma, marcos, responsáveis, riscos.
+      </bpmn:documentation>
+    </bpmn:dataObjectReference>
+    <bpmn:dataObject id="DataObject_CronogramaRef"/>
+
+    <!-- ====================================================================
+         SEQUENCE FLOWS PRINCIPAIS
+         ==================================================================== -->
+    <bpmn:sequenceFlow id="Flow_InicioParaAvaliacao" sourceRef="Event_InicioExpansao" targetRef="Gateway_TipoExpansao"/>
+    
+    <bpmn:exclusiveGateway id="Gateway_TipoExpansao" name="Tipo de Expansão?">
+      <bpmn:incoming>Flow_InicioParaAvaliacao</bpmn:incoming>
+      <bpmn:outgoing>Flow_InicioParaExpansao</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ExpansaoExistente</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <bpmn:sequenceFlow id="Flow_InicioParaExpansao" name="Nova Região" sourceRef="Gateway_TipoExpansao" targetRef="SubProcess_ExpansaoGeografica">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${tipo_expansao == 'nova_regiao'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ExpansaoExistente" name="Região Existente" sourceRef="Gateway_TipoExpansao" targetRef="SubProcess_GeracaoDemanda">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${tipo_expansao == 'existente'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ExpansaoParaGeracaoDemanda" sourceRef="SubProcess_ExpansaoGeografica" targetRef="SubProcess_GeracaoDemanda"/>
+    <bpmn:sequenceFlow id="Flow_GeracaoParaVendas" sourceRef="SubProcess_GeracaoDemanda" targetRef="SubProcess_VendasConsultivas"/>
+    <bpmn:sequenceFlow id="Flow_LeadParaQualificacao" sourceRef="Event_LeadRecebido" targetRef="SubProcess_VendasConsultivas"/>
+    <bpmn:sequenceFlow id="Flow_SolicitacaoParaDiscovery" sourceRef="Event_SolicitacaoPropostaRecebida" targetRef="SubProcess_VendasConsultivas"/>
+    <bpmn:sequenceFlow id="Flow_VendasParaImplantacao" sourceRef="SubProcess_VendasConsultivas" targetRef="SubProcess_Implantacao"/>
+    <bpmn:sequenceFlow id="Flow_ImplantacaoParaGestao" sourceRef="SubProcess_Implantacao" targetRef="SubProcess_GestaoGrandesContas"/>
+    <bpmn:sequenceFlow id="Flow_GestaoParaExpansao" sourceRef="SubProcess_GestaoGrandesContas" targetRef="Event_FimCiclo"/>
+
+    <!-- ====================================================================
+         EVENTO DE FIM
+         ==================================================================== -->
+    <bpmn:endEvent id="Event_FimCiclo" name="Fim do Ciclo de Expansão e Vendas">
+      <bpmn:documentation>
+        Conclusão do ciclo de expansão e vendas.
+        Cliente corporativo em operação, em gestão contínua.
+        Ciclo reinicia para novos leads e oportunidades.
+      </bpmn:documentation>
+      <bpmn:incoming>Flow_GestaoParaExpansao</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ====================================================================
+         ANOTAÇÕES (Pontos de Medição de KPIs)
+         ==================================================================== -->
+    <bpmn:textAnnotation id="Annotation_KPI_VidasSobCuidado">
+      <bpmn:text>KPI Estratégico: # VIDAS SOB CUIDADO
+Medido em: Event_ImplantacaoConcluida
+Frequência: Mensal
+Responsável: VP de Operações (COO)</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_KPI1" sourceRef="Event_ImplantacaoConcluida" targetRef="Annotation_KPI_VidasSobCuidado"/>
+    
+    <bpmn:textAnnotation id="Annotation_KPI_TaxaConversao">
+      <bpmn:text>KPI Específico OPE-04:
+Taxa de conversão de propostas para contratos
+Fórmula: (Contratos fechados ÷ Propostas enviadas) × 100
+Meta: Empresas >100 vidas</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_KPI2" sourceRef="SubProcess_VendasConsultivas" targetRef="Annotation_KPI_TaxaConversao"/>
+    
+    <bpmn:textAnnotation id="Annotation_KPI_NPS">
+      <bpmn:text>KPI Estratégico OPE-09:
+# NPS DOS GRANDES CLIENTES
+Medido em: Task_ColetarNPSImplantacao
+Frequência: Primeiros 30 dias após Go-Live</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_KPI3" sourceRef="Task_ColetarNPSImplantacao" targetRef="Annotation_KPI_NPS"/>
+    
+    <bpmn:textAnnotation id="Annotation_KPI_TempoImplantacao">
+      <bpmn:text>KPI Específico OPE-09:
+Tempo médio de implantação (dias)
+Fórmula: Data Go-Live − Data Início Implantação
+Medido em: Event_ImplantacaoConcluida</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_KPI4" sourceRef="SubProcess_Implantacao" targetRef="Annotation_KPI_TempoImplantacao"/>
+    
+    <bpmn:textAnnotation id="Annotation_KPI_Expansao">
+      <bpmn:text>KPI Específico OPE-11:
+# Vidas adicionadas em novas regiões (90 dias)
+Medido em: SubProcess_MonitoramentoRampUp
+Frequência: Mensal</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_KPI5" sourceRef="SubProcess_ExpansaoGeografica" targetRef="Annotation_KPI_Expansao"/>
+    
+    <bpmn:textAnnotation id="Annotation_KPI_TimeToMarket">
+      <bpmn:text>KPI Específico OPE-05:
+Time-to-market de novos produtos (dias)
+Fórmula: Data Lançamento − Data Início Desenvolvimento
+Responsável: Coordenador de Projetos Ágeis</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_KPI6" sourceRef="SubProcess_DesenvolvimentoProdutos" targetRef="Annotation_KPI_TimeToMarket"/>
+    
+    <bpmn:textAnnotation id="Annotation_Integracao_CRM">
+      <bpmn:text>Integração: CRM (Salesforce/HubSpot)
+- Registro de leads e oportunidades
+- Pipeline de vendas
+- Histórico de interações
+- Automação de tarefas</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_CRM" sourceRef="DataStore_CRM" targetRef="Annotation_Integracao_CRM"/>
+    
+    <bpmn:textAnnotation id="Annotation_Integracao_Tasy">
+      <bpmn:text>Integração: Tasy ERP
+- Cadastro de beneficiários
+- Configuração de coberturas
+- Autorização de procedimentos
+- Gestão de sinistros</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_Tasy" sourceRef="SubProcess_Implantacao" targetRef="Annotation_Integracao_Tasy"/>
+
+  </bpmn:process>
+
+  <!-- ========================================================================
+       MESSAGES
+       ======================================================================== -->
+  <bpmn:message id="Message_LeadInbound" name="MSG_LeadInbound"/>
+  <bpmn:message id="Message_SolicitacaoProposta" name="MSG_SolicitacaoProposta"/>
+  <bpmn:message id="Message_FeedbackProposta" name="MSG_FeedbackProposta"/>
+  <bpmn:message id="Message_ContratoAssinado" name="MSG_ContratoAssinado"/>
+
+  <!-- ========================================================================
+       SIGNALS
+       ======================================================================== -->
+  <bpmn:signal id="Signal_RegiaoHabilitada" name="SIG_NovaRegiaoHabilitada"/>
+  <bpmn:signal id="Signal_ContratoFechado" name="SIG_ContratoFechado"/>
+  <bpmn:signal id="Signal_ImplantacaoConcluida" name="SIG_ImplantacaoConcluida"/>
+  <bpmn:signal id="Signal_ContratoExpandido" name="SIG_ContratoExpandido"/>
+  <bpmn:signal id="Signal_DemandaProduto" name="SIG_DemandaNovoProduto"/>
+
+  <!-- ========================================================================
+       ERRORS
+       ======================================================================== -->
+  <bpmn:error id="Error_ValidacaoCadastral" name="ERR_ValidacaoCadastral" errorCode="ERR_001"/>
+
+  <!-- ========================================================================
+       DIAGRAMA BPMN (Layout Visual)
+       ======================================================================== -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_MaquinaExpansaoVendas">
+    <bpmndi:BPMNPlane id="BPMNPlane_Collaboration" bpmnElement="Collaboration_MaquinaExpansaoVendas">
+      
+      <!-- Pool: Mercado e Prospects -->
+      <bpmndi:BPMNShape id="Shape_Pool_MercadoProspects" bpmnElement="Pool_MercadoProspects" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="2400" height="100"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Pool: Cliente Corporativo -->
+      <bpmndi:BPMNShape id="Shape_Pool_ClienteCorporativo" bpmnElement="Pool_ClienteCorporativo" isHorizontal="true">
+        <dc:Bounds x="160" y="200" width="2400" height="100"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Pool: Máquina de Expansão e Vendas B2B -->
+      <bpmndi:BPMNShape id="Shape_Pool_MaquinaExpansaoVendas" bpmnElement="Pool_MaquinaExpansaoVendas" isHorizontal="true">
+        <dc:Bounds x="160" y="320" width="2400" height="1400"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Lane: Expansão Geográfica -->
+      <bpmndi:BPMNShape id="Shape_Lane_ExpansaoGeografica" bpmnElement="Lane_ExpansaoGeografica" isHorizontal="true">
+        <dc:Bounds x="190" y="320" width="2370" height="180"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Lane: Marketing e Geração de Demanda -->
+      <bpmndi:BPMNShape id="Shape_Lane_MarketingGeracao" bpmnElement="Lane_MarketingGeracao" isHorizontal="true">
+        <dc:Bounds x="190" y="500" width="2370" height="160"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Lane: Vendas Consultivas B2B -->
+      <bpmndi:BPMNShape id="Shape_Lane_VendasConsultivas" bpmnElement="Lane_VendasConsultivas" isHorizontal="true">
+        <dc:Bounds x="190" y="660" width="2370" height="220"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Lane: Gestão de Grandes Contas -->
+      <bpmndi:BPMNShape id="Shape_Lane_GrandesContas" bpmnElement="Lane_GrandesContas" isHorizontal="true">
+        <dc:Bounds x="190" y="880" width="2370" height="140"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Lane: Produto e Pricing -->
+      <bpmndi:BPMNShape id="Shape_Lane_ProdutoPricing" bpmnElement="Lane_ProdutoPricing" isHorizontal="true">
+        <dc:Bounds x="190" y="1020" width="2370" height="160"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Lane: Precificação e Análise de Risco -->
+      <bpmndi:BPMNShape id="Shape_Lane_Precificacao" bpmnElement="Lane_Precificacao" isHorizontal="true">
+        <dc:Bounds x="190" y="1180" width="2370" height="120"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Lane: Implantação e Onboarding -->
+      <bpmndi:BPMNShape id="Shape_Lane_ImplantacaoOnboarding" bpmnElement="Lane_ImplantacaoOnboarding" isHorizontal="true">
+        <dc:Bounds x="190" y="1300" width="2370" height="280"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Lane: Backoffice e Operações -->
+      <bpmndi:BPMNShape id="Shape_Lane_BackofficeOperacoes" bpmnElement="Lane_BackofficeOperacoes" isHorizontal="true">
+        <dc:Bounds x="190" y="1580" width="2370" height="140"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Pool: Sistemas Integrados -->
+      <bpmndi:BPMNShape id="Shape_Pool_SistemasIntegrados" bpmnElement="Pool_SistemasIntegrados" isHorizontal="true">
+        <dc:Bounds x="160" y="1740" width="2400" height="100"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Subprocesso: Expansão Geográfica -->
+      <bpmndi:BPMNShape id="Shape_SubProcess_ExpansaoGeografica" bpmnElement="SubProcess_ExpansaoGeografica" isExpanded="true">
+        <dc:Bounds x="250" y="340" width="600" height="140"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Subprocesso: Geração de Demanda -->
+      <bpmndi:BPMNShape id="Shape_SubProcess_GeracaoDemanda" bpmnElement="SubProcess_GeracaoDemanda" isExpanded="true">
+        <dc:Bounds x="250" y="520" width="500" height="120"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Subprocesso: Vendas Consultivas -->
+      <bpmndi:BPMNShape id="Shape_SubProcess_VendasConsultivas" bpmnElement="SubProcess_VendasConsultivas" isExpanded="true">
+        <dc:Bounds x="800" y="680" width="900" height="180"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Subprocesso: Gestão de Grandes Contas -->
+      <bpmndi:BPMNShape id="Shape_SubProcess_GestaoGrandesContas" bpmnElement="SubProcess_GestaoGrandesContas" isExpanded="true">
+        <dc:Bounds x="1900" y="900" width="500" height="100"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Subprocesso: Desenvolvimento de Produtos -->
+      <bpmndi:BPMNShape id="Shape_SubProcess_DesenvolvimentoProdutos" bpmnElement="SubProcess_DesenvolvimentoProdutos" isExpanded="true">
+        <dc:Bounds x="250" y="1040" width="700" height="120"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Subprocesso: Implantação -->
+      <bpmndi:BPMNShape id="Shape_SubProcess_Implantacao" bpmnElement="SubProcess_Implantacao" isExpanded="true">
+        <dc:Bounds x="1200" y="1320" width="900" height="240"/>
+      </bpmndi:BPMNShape>
+      
+      <!-- Evento de Início: Expansão -->
+      <bpmndi:BPMNShape id="Shape_Event_InicioExpansao" bpmnElement="Event_InicioExpansao">
+        <dc:Bounds x="270" y="392" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="250" y="435" width="76" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <!-- Evento de Início: Lead Recebido -->
+      <bpmndi:BPMNShape id="Shape_Event_LeadRecebido" bpmnElement="Event_LeadRecebido">
+        <dc:Bounds x="270" y="562" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="252" y="605" width="72" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <!-- Evento de Fim -->
+      <bpmndi:BPMNShape id="Shape_Event_FimCiclo" bpmnElement="Event_FimCiclo">
+        <dc:Bounds x="2482" y="932" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2455" y="975" width="90" height="40"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <!-- Data Store: CRM -->
+      <bpmndi:BPMNShape id="Shape_DataStore_CRM" bpmnElement="DataStore_CRM">
+        <dc:Bounds x="780" y="555" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="755" y="612" width="100" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      
+      <!-- Message Flows -->
+      <bpmndi:BPMNEdge id="Edge_MsgFlow_LeadInbound" bpmnElement="MsgFlow_LeadInbound">
+        <di:waypoint x="288" y="180"/>
+        <di:waypoint x="288" y="562"/>
+      </bpmndi:BPMNEdge>
+      
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>
