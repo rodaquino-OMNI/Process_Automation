@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   id="Definitions_Negotiation_V3"
+                   targetNamespace="http://austa.com.br/bpmn/v3"
+                   exporter="Camunda Modeler"
+                   exporterVersion="5.20.0">
+
+  <bpmn:process id="Process_Negotiation_V3" name="AUSTA V3 - Negotiation Subprocess" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:documentation>
+      AUSTA V3 Sales Completion - Phase 2: Negotiation
+      Features: 4-tier approval matrix, discount escalation, DMN routing, legal review, contract generation
+      Compliance: V1 approval patterns + V2 discount escalation logic
+    </bpmn:documentation>
+
+    <!-- START EVENT -->
+    <bpmn:startEvent id="Event_NegotiationStart_V3" name="Start Negotiation">
+      <bpmn:outgoing>Flow_ToProposal</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- TASK 1: Elaborate Proposal -->
+    <bpmn:userTask id="Task_ElaborateProposal_V3" name="Elaborate Commercial Proposal"
+                   camunda:assignee="${accountExecutive}"
+                   camunda:candidateGroups="sales-team,pre-sales">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="dealValue" label="Deal Value (R$)" type="long">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+              <camunda:constraint name="min" config="1000" />
+            </camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="discountPercentage" label="Discount (%)" type="long" defaultValue="0">
+            <camunda:validation>
+              <camunda:constraint name="min" config="0" />
+              <camunda:constraint name="max" config="30" />
+            </camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="contractType" label="Contract Type" type="enum">
+            <camunda:value id="uti_outsourced" name="Outsourced ICU" />
+            <camunda:value id="complete_radiology" name="Complete Radiology" />
+            <camunda:value id="corporate_plan" name="Corporate Health Plan" />
+            <camunda:value id="integrated_combo" name="Integrated Combo" />
+          </camunda:formField>
+          <camunda:formField id="contractDuration" label="Duration (months)" type="long">
+            <camunda:validation>
+              <camunda:constraint name="min" config="12" />
+              <camunda:constraint name="max" config="60" />
+            </camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="paymentTerms" label="Payment Terms" type="enum">
+            <camunda:value id="30_days" name="30 days" />
+            <camunda:value id="45_days" name="45 days" />
+            <camunda:value id="60_days" name="60 days" />
+          </camunda:formField>
+          <camunda:formField id="slaTerms" label="SLA Terms" type="string" />
+          <camunda:formField id="penalties" label="Penalty Clauses" type="string" />
+          <camunda:formField id="guarantees" label="Guarantees Included" type="string" />
+        </camunda:formData>
+        <camunda:taskListener event="create">
+          <camunda:script scriptFormat="javascript">
+            task.setDueDate(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)); // 3 days
+          </camunda:script>
+        </camunda:taskListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToProposal</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToTechnicalSupport</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- TASK 2: Technical Support -->
+    <bpmn:userTask id="Task_TechnicalSupport_V3" name="Provide Technical Support"
+                   camunda:candidateGroups="pre-sales,technical-team">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="technicalSpecs" label="Technical Specifications" type="string" />
+          <camunda:formField id="integrations" label="Required Integrations" type="string" />
+          <camunda:formField id="equipment" label="Equipment Included" type="string" />
+          <camunda:formField id="training" label="Training Plan" type="string" />
+          <camunda:formField id="support24h" label="24/7 Support" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToTechnicalSupport</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToSendProposal</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- TASK 3: Send Proposal -->
+    <bpmn:serviceTask id="Task_SendProposal_V3" name="Send Proposal to Client"
+                      camunda:type="external" camunda:topic="send-proposal">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="clientEmail">${clientEmail}</camunda:inputParameter>
+          <camunda:inputParameter name="proposalData">${execution.getVariables()}</camunda:inputParameter>
+          <camunda:outputParameter name="proposalSent">${result.sent}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToSendProposal</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToFollowUp</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- TASK 4: Follow-up -->
+    <bpmn:userTask id="Task_FollowUp_V3" name="Follow-up on Proposal"
+                   camunda:assignee="${accountExecutive}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="contactsMade" label="Contacts Made" type="long" />
+          <camunda:formField id="clientFeedback" label="Client Feedback" type="string" />
+          <camunda:formField id="objectionsRaised" label="Objections Raised" type="string" />
+          <camunda:formField id="interestLevel" label="Interest Level" type="enum">
+            <camunda:value id="high" name="High Interest" />
+            <camunda:value id="medium" name="Medium Interest" />
+            <camunda:value id="low" name="Low Interest" />
+            <camunda:value id="rejected" name="Rejected" />
+          </camunda:formField>
+        </camunda:formData>
+        <camunda:taskListener event="create">
+          <camunda:script scriptFormat="javascript">
+            task.setDueDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); // 7 days
+          </camunda:script>
+        </camunda:taskListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToFollowUp</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToClientResponse</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- GATEWAY: Client Response -->
+    <bpmn:exclusiveGateway id="Gateway_ClientResponse_V3" name="Client Response?" default="Flow_ToReject">
+      <bpmn:incoming>Flow_ToClientResponse</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToNegotiate</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToAccept</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToReject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- TASK 5: Negotiate Terms -->
+    <bpmn:userTask id="Task_NegotiateTerms_V3" name="Negotiate Final Terms"
+                   camunda:candidateGroups="sales-team,executives">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="negotiationPoints" label="Negotiation Points" type="string" />
+          <camunda:formField id="counterproposals" label="Counter-proposals" type="string" />
+          <camunda:formField id="concessionsMade" label="Concessions Made" type="string" />
+          <camunda:formField id="finalDealValue" label="Final Deal Value (R$)" type="long" />
+          <camunda:formField id="finalDiscount" label="Final Discount (%)" type="long" />
+          <camunda:formField id="negotiationStatus" label="Negotiation Status" type="enum">
+            <camunda:value id="in_progress" name="In Progress" />
+            <camunda:value id="preliminary_agreement" name="Preliminary Agreement" />
+            <camunda:value id="deadlock" name="Deadlock" />
+            <camunda:value id="final_agreement" name="Final Agreement" />
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToNegotiate</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToApprovalRouting</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- BOUNDARY EVENT: Negotiation Timeout (72h escalation) -->
+    <bpmn:boundaryEvent id="Event_NegotiationTimeout_V3" name="Timeout 72h"
+                        cancelActivity="false" attachedToRef="Task_NegotiateTerms_V3">
+      <bpmn:outgoing>Flow_ToEscalation</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT72H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <!-- BOUNDARY EVENT: Negotiation Deadlock -->
+    <bpmn:boundaryEvent id="Event_NegotiationDeadlock_V3" name="Deadlock"
+                        attachedToRef="Task_NegotiateTerms_V3">
+      <bpmn:outgoing>Flow_ToResolveDeadlock</bpmn:outgoing>
+      <bpmn:errorEventDefinition errorRef="Error_Deadlock" />
+    </bpmn:boundaryEvent>
+
+    <!-- TASK: Resolve Deadlock -->
+    <bpmn:userTask id="Task_ResolveDeadlock_V3" name="Resolve Negotiation Deadlock"
+                   camunda:candidateGroups="executives,ceo">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="resolutionStrategy" label="Resolution Strategy" type="string" />
+          <camunda:formField id="newApproach" label="New Approach" type="string" />
+          <camunda:formField id="mediationNeeded" label="Mediation Needed?" type="boolean" />
+          <camunda:formField id="deadlockResolved" label="Deadlock Resolved?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToResolveDeadlock</bpmn:incoming>
+      <bpmn:outgoing>Flow_DeadlockToRouting</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- BUSINESS RULE TASK: 4-Tier Approval Routing via DMN -->
+    <bpmn:businessRuleTask id="Task_ApprovalRouting_V3" name="Route Approval via DMN"
+                           camunda:resultVariable="approvalTier"
+                           camunda:decisionRef="Decision_ApprovalMatrix"
+                           camunda:mapDecisionResult="singleEntry">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="dealValue">${finalDealValue != null ? finalDealValue : dealValue}</camunda:inputParameter>
+          <camunda:inputParameter name="discountPercentage">${finalDiscount != null ? finalDiscount : discountPercentage}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToApprovalRouting</bpmn:incoming>
+      <bpmn:incoming>Flow_DeadlockToRouting</bpmn:incoming>
+      <bpmn:incoming>Flow_ToEscalation</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToApprovalDecision</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- GATEWAY: Approval Tier Decision -->
+    <bpmn:exclusiveGateway id="Gateway_ApprovalTier_V3" name="Approval Tier?" default="Flow_ToAutoApprove">
+      <bpmn:incoming>Flow_ToApprovalDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAutoApprove</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToManagerApproval</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToDirectorApproval</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToCEOApproval</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- TASK: Auto Approval (<$50K, <10% discount) -->
+    <bpmn:serviceTask id="Task_AutoApprove_V3" name="Auto-Approve (Tier 1)"
+                      camunda:type="external" camunda:topic="auto-approve">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="approved">${true}</camunda:outputParameter>
+          <camunda:outputParameter name="approvalLevel">auto</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToAutoApprove</bpmn:incoming>
+      <bpmn:outgoing>Flow_AutoToContract</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- TASK: Manager Approval ($50K-$200K) -->
+    <bpmn:userTask id="Task_ManagerApproval_V3" name="Manager Approval (Tier 2)"
+                   camunda:candidateGroups="sales-managers">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="managerApproved" label="Approve?" type="boolean" />
+          <camunda:formField id="managerComments" label="Comments" type="string" />
+          <camunda:formField id="managerConditions" label="Additional Conditions" type="string" />
+        </camunda:formData>
+        <camunda:taskListener event="create">
+          <camunda:script scriptFormat="javascript">
+            task.setDueDate(new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)); // 2 days
+          </camunda:script>
+        </camunda:taskListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToManagerApproval</bpmn:incoming>
+      <bpmn:outgoing>Flow_ManagerToDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- TASK: Director Approval ($200K-$1M) -->
+    <bpmn:userTask id="Task_DirectorApproval_V3" name="Director Approval (Tier 3)"
+                   camunda:candidateGroups="directors">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="directorApproved" label="Approve?" type="boolean" />
+          <camunda:formField id="directorComments" label="Comments" type="string" />
+          <camunda:formField id="directorConditions" label="Additional Conditions" type="string" />
+          <camunda:formField id="marginImpact" label="Margin Impact Analysis" type="string" />
+        </camunda:formData>
+        <camunda:taskListener event="create">
+          <camunda:script scriptFormat="javascript">
+            task.setDueDate(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)); // 3 days
+          </camunda:script>
+        </camunda:taskListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToDirectorApproval</bpmn:incoming>
+      <bpmn:outgoing>Flow_DirectorToDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- TASK: CEO Approval (>$1M or >15% discount) -->
+    <bpmn:userTask id="Task_CEOApproval_V3" name="CEO Approval (Tier 4)"
+                   camunda:candidateGroups="ceo,executives">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="ceoApproved" label="Approve?" type="boolean" />
+          <camunda:formField id="ceoComments" label="Strategic Comments" type="string" />
+          <camunda:formField id="ceoConditions" label="Strategic Conditions" type="string" />
+          <camunda:formField id="strategicJustification" label="Strategic Justification" type="string" />
+          <camunda:formField id="boardApprovalNeeded" label="Board Approval Needed?" type="boolean" />
+        </camunda:formData>
+        <camunda:taskListener event="create">
+          <camunda:script scriptFormat="javascript">
+            task.setDueDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)); // 5 days
+          </camunda:script>
+        </camunda:taskListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToCEOApproval</bpmn:incoming>
+      <bpmn:outgoing>Flow_CEOToDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- BOUNDARY EVENT: Approval Timeout -->
+    <bpmn:boundaryEvent id="Event_ApprovalTimeout_V3" name="Approval Timeout"
+                        cancelActivity="true" attachedToRef="Task_ManagerApproval_V3">
+      <bpmn:outgoing>Flow_TimeoutToRejection</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>P7D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <!-- GATEWAY: Approval Decision -->
+    <bpmn:exclusiveGateway id="Gateway_ApprovalDecision_V3" name="Approved?" default="Flow_ToRejection">
+      <bpmn:incoming>Flow_ManagerToDecision</bpmn:incoming>
+      <bpmn:incoming>Flow_DirectorToDecision</bpmn:incoming>
+      <bpmn:incoming>Flow_CEOToDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ApprovedToContract</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToRejection</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- TASK: Generate Contract -->
+    <bpmn:serviceTask id="Task_GenerateContract_V3" name="Generate Contract"
+                      camunda:delegateExpression="${contractGenerationDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="proposalData">${execution.getVariables()}</camunda:inputParameter>
+          <camunda:outputParameter name="contractId">${contractId}</camunda:outputParameter>
+          <camunda:outputParameter name="contractUrl">${contractUrl}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ApprovedToContract</bpmn:incoming>
+      <bpmn:incoming>Flow_AutoToContract</bpmn:incoming>
+      <bpmn:incoming>Flow_ToAccept</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToLegalReview</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- TASK: Legal Review -->
+    <bpmn:userTask id="Task_LegalReview_V3" name="Legal Review"
+                   camunda:candidateGroups="legal-department">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="contractId" label="Contract ID" type="string" />
+          <camunda:formField id="contractUrl" label="Contract URL" type="string" />
+          <camunda:formField id="legalApproved" label="Legal Approval?" type="boolean" />
+          <camunda:formField id="legalComments" label="Legal Comments" type="string" />
+          <camunda:formField id="legalRisks" label="Legal Risks Identified" type="string" />
+          <camunda:formField id="modificationsNeeded" label="Modifications Needed" type="string" />
+        </camunda:formData>
+        <camunda:taskListener event="create">
+          <camunda:script scriptFormat="javascript">
+            task.setDueDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)); // 5 days
+          </camunda:script>
+        </camunda:taskListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToLegalReview</bpmn:incoming>
+      <bpmn:incoming>Flow_ModifyToLegal</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToLegalDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- GATEWAY: Legal Approval Decision -->
+    <bpmn:exclusiveGateway id="Gateway_LegalApproval_V3" name="Legal Approved?" default="Flow_LegalRejected">
+      <bpmn:incoming>Flow_ToLegalDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_LegalApproved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_LegalRejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- TASK: Modify Contract -->
+    <bpmn:userTask id="Task_ModifyContract_V3" name="Modify Contract Based on Legal Feedback"
+                   camunda:candidateGroups="legal-department,sales-team">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="modifications" label="Modifications Made" type="string" />
+          <camunda:formField id="newVersion" label="New Version Number" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_LegalRejected</bpmn:incoming>
+      <bpmn:outgoing>Flow_ModifyToLegal</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- TASK: Loss Analysis -->
+    <bpmn:userTask id="Task_LossAnalysis_V3" name="Analyze Lost Opportunity"
+                   camunda:assignee="${accountExecutive}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="lossReason" label="Loss Reason" type="enum">
+            <camunda:value id="price_high" name="Price Too High" />
+            <camunda:value id="competitor" name="Competitor Chosen" />
+            <camunda:value id="project_cancelled" name="Project Cancelled" />
+            <camunda:value id="decision_postponed" name="Decision Postponed" />
+            <camunda:value id="legal_issues" name="Legal Issues" />
+            <camunda:value id="approval_rejected" name="Approval Rejected" />
+          </camunda:formField>
+          <camunda:formField id="lessonsLearned" label="Lessons Learned" type="string" />
+          <camunda:formField id="processImprovements" label="Process Improvements" type="string" />
+          <camunda:formField id="futureOpportunity" label="Future Opportunity?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToReject</bpmn:incoming>
+      <bpmn:incoming>Flow_ToRejection</bpmn:incoming>
+      <bpmn:incoming>Flow_TimeoutToRejection</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToLostEnd</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- END EVENTS -->
+    <bpmn:endEvent id="Event_NegotiationSuccess_V3" name="Negotiation Complete - Contract Ready">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="javascript">
+            execution.setVariable('negotiationComplete', true);
+            execution.setVariable('negotiationEndDate', new Date().getTime());
+            execution.setVariable('contractGenerated', true);
+          </camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_LegalApproved</bpmn:incoming>
+      <bpmn:messageEventDefinition messageRef="Message_NegotiationComplete" />
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="Event_NegotiationFailed_V3" name="Negotiation Failed">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="javascript">
+            execution.setVariable('negotiationComplete', false);
+            execution.setVariable('negotiationFailed', true);
+            execution.setVariable('negotiationEndDate', new Date().getTime());
+          </camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToLostEnd</bpmn:incoming>
+      <bpmn:terminateEventDefinition />
+    </bpmn:endEvent>
+
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToProposal" sourceRef="Event_NegotiationStart_V3" targetRef="Task_ElaborateProposal_V3" />
+    <bpmn:sequenceFlow id="Flow_ToTechnicalSupport" sourceRef="Task_ElaborateProposal_V3" targetRef="Task_TechnicalSupport_V3" />
+    <bpmn:sequenceFlow id="Flow_ToSendProposal" sourceRef="Task_TechnicalSupport_V3" targetRef="Task_SendProposal_V3" />
+    <bpmn:sequenceFlow id="Flow_ToFollowUp" sourceRef="Task_SendProposal_V3" targetRef="Task_FollowUp_V3" />
+    <bpmn:sequenceFlow id="Flow_ToClientResponse" sourceRef="Task_FollowUp_V3" targetRef="Gateway_ClientResponse_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToNegotiate" name="Negotiate" sourceRef="Gateway_ClientResponse_V3" targetRef="Task_NegotiateTerms_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${interestLevel == 'high' || interestLevel == 'medium'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ToAccept" name="Accept" sourceRef="Gateway_ClientResponse_V3" targetRef="Task_GenerateContract_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${interestLevel == 'accepted'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ToReject" name="Reject/Low" sourceRef="Gateway_ClientResponse_V3" targetRef="Task_LossAnalysis_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToApprovalRouting" sourceRef="Task_NegotiateTerms_V3" targetRef="Task_ApprovalRouting_V3" />
+    <bpmn:sequenceFlow id="Flow_ToEscalation" sourceRef="Event_NegotiationTimeout_V3" targetRef="Task_ApprovalRouting_V3" />
+    <bpmn:sequenceFlow id="Flow_ToResolveDeadlock" sourceRef="Event_NegotiationDeadlock_V3" targetRef="Task_ResolveDeadlock_V3" />
+    <bpmn:sequenceFlow id="Flow_DeadlockToRouting" sourceRef="Task_ResolveDeadlock_V3" targetRef="Task_ApprovalRouting_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToApprovalDecision" sourceRef="Task_ApprovalRouting_V3" targetRef="Gateway_ApprovalTier_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToAutoApprove" name="Tier 1: <$50K, <10%" sourceRef="Gateway_ApprovalTier_V3" targetRef="Task_AutoApprove_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToManagerApproval" name="Tier 2: $50K-$200K" sourceRef="Gateway_ApprovalTier_V3" targetRef="Task_ManagerApproval_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approvalTier == 'manager'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ToDirectorApproval" name="Tier 3: $200K-$1M" sourceRef="Gateway_ApprovalTier_V3" targetRef="Task_DirectorApproval_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approvalTier == 'director'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ToCEOApproval" name="Tier 4: >$1M or >15%" sourceRef="Gateway_ApprovalTier_V3" targetRef="Task_CEOApproval_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approvalTier == 'ceo'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_AutoToContract" sourceRef="Task_AutoApprove_V3" targetRef="Task_GenerateContract_V3" />
+    <bpmn:sequenceFlow id="Flow_ManagerToDecision" sourceRef="Task_ManagerApproval_V3" targetRef="Gateway_ApprovalDecision_V3" />
+    <bpmn:sequenceFlow id="Flow_DirectorToDecision" sourceRef="Task_DirectorApproval_V3" targetRef="Gateway_ApprovalDecision_V3" />
+    <bpmn:sequenceFlow id="Flow_CEOToDecision" sourceRef="Task_CEOApproval_V3" targetRef="Gateway_ApprovalDecision_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ApprovedToContract" name="Yes" sourceRef="Gateway_ApprovalDecision_V3" targetRef="Task_GenerateContract_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${managerApproved == true || directorApproved == true || ceoApproved == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ToRejection" name="No" sourceRef="Gateway_ApprovalDecision_V3" targetRef="Task_LossAnalysis_V3" />
+    <bpmn:sequenceFlow id="Flow_TimeoutToRejection" sourceRef="Event_ApprovalTimeout_V3" targetRef="Task_LossAnalysis_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToLegalReview" sourceRef="Task_GenerateContract_V3" targetRef="Task_LegalReview_V3" />
+    <bpmn:sequenceFlow id="Flow_ToLegalDecision" sourceRef="Task_LegalReview_V3" targetRef="Gateway_LegalApproval_V3" />
+
+    <bpmn:sequenceFlow id="Flow_LegalApproved" name="Yes" sourceRef="Gateway_LegalApproval_V3" targetRef="Event_NegotiationSuccess_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${legalApproved == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_LegalRejected" name="No" sourceRef="Gateway_LegalApproval_V3" targetRef="Task_ModifyContract_V3" />
+    <bpmn:sequenceFlow id="Flow_ModifyToLegal" sourceRef="Task_ModifyContract_V3" targetRef="Task_LegalReview_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToLostEnd" sourceRef="Task_LossAnalysis_V3" targetRef="Event_NegotiationFailed_V3" />
+
+  </bpmn:process>
+
+  <!-- ERROR DEFINITIONS -->
+  <bpmn:error id="Error_Deadlock" name="NegotiationDeadlock" errorCode="NEGOTIATION_DEADLOCK" />
+
+  <!-- MESSAGE DEFINITIONS -->
+  <bpmn:message id="Message_NegotiationComplete" name="NegotiationComplete" />
+
+  <!-- BPMN DIAGRAM (minimal for validation) -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Negotiation_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_Negotiation_V3" bpmnElement="Process_Negotiation_V3">
+      <!-- Diagram shapes omitted for brevity - would be added by Camunda Modeler -->
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

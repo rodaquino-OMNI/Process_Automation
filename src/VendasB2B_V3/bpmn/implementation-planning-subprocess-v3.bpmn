@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   id="Definitions_ImplPlan_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_ImplPlan_V3" name="Planejamento Implementação V3" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_ImplPlanStart_V3" name="Iniciar Planejamento">
+      <bpmn:outgoing>Flow_Start_Parallel</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- V3 Enhancement: Parallel Gateway for Planning Activities -->
+    <bpmn:parallelGateway id="Gateway_ParallelPlanning_V3" name="Planejamento Paralelo">
+      <bpmn:incoming>Flow_Start_Parallel</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Team</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Scope</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Risks</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- Team Formation -->
+    <bpmn:userTask id="Task_FormTeam" name="Formar Equipe de Implementação" camunda:assignee="${projectManager}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="teamMembers" label="Membros da Equipe" type="string" />
+          <camunda:formField id="roles" label="Papéis e Responsabilidades" type="string" />
+          <camunda:formField id="externalConsultants" label="Consultores Externos" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_To_Team</bpmn:incoming>
+      <bpmn:outgoing>Flow_Team_Join</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Scope Definition -->
+    <bpmn:userTask id="Task_DefineScope" name="Definir Escopo Detalhado" camunda:assignee="${projectManager}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="projectScope" label="Escopo do Projeto" type="string" />
+          <camunda:formField id="deliverables" label="Entregas" type="string" />
+          <camunda:formField id="milestones" label="Marcos" type="string" />
+          <camunda:formField id="timeline" label="Cronograma" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_To_Scope</bpmn:incoming>
+      <bpmn:outgoing>Flow_Scope_Join</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Risk Analysis -->
+    <bpmn:serviceTask id="Task_AnalyzeRisks" name="Analisar Riscos" camunda:type="external" camunda:topic="analyze-implementation-risks">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="projectScope">${projectScope}</camunda:inputParameter>
+          <camunda:outputParameter name="riskAssessment">${riskAssessment}</camunda:outputParameter>
+          <camunda:outputParameter name="mitigationPlan">${mitigationPlan}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_To_Risks</bpmn:incoming>
+      <bpmn:outgoing>Flow_Risks_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Join Gateway -->
+    <bpmn:parallelGateway id="Gateway_JoinPlanning_V3" name="Unir Planejamento">
+      <bpmn:incoming>Flow_Team_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Scope_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Risks_Join</bpmn:incoming>
+      <bpmn:outgoing>Flow_Join_GeneratePlan</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- Generate Implementation Plan -->
+    <bpmn:serviceTask id="Task_GenerateImplPlan" name="Gerar Plano de Implementação" camunda:type="external" camunda:topic="generate-implementation-plan">
+      <bpmn:incoming>Flow_Join_GeneratePlan</bpmn:incoming>
+      <bpmn:outgoing>Flow_Plan_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="Event_ImplPlanEnd_V3" name="Planejamento Concluído">
+      <bpmn:incoming>Flow_Plan_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_Parallel" sourceRef="Event_ImplPlanStart_V3" targetRef="Gateway_ParallelPlanning_V3" />
+    <bpmn:sequenceFlow id="Flow_To_Team" sourceRef="Gateway_ParallelPlanning_V3" targetRef="Task_FormTeam" />
+    <bpmn:sequenceFlow id="Flow_To_Scope" sourceRef="Gateway_ParallelPlanning_V3" targetRef="Task_DefineScope" />
+    <bpmn:sequenceFlow id="Flow_To_Risks" sourceRef="Gateway_ParallelPlanning_V3" targetRef="Task_AnalyzeRisks" />
+    <bpmn:sequenceFlow id="Flow_Team_Join" sourceRef="Task_FormTeam" targetRef="Gateway_JoinPlanning_V3" />
+    <bpmn:sequenceFlow id="Flow_Scope_Join" sourceRef="Task_DefineScope" targetRef="Gateway_JoinPlanning_V3" />
+    <bpmn:sequenceFlow id="Flow_Risks_Join" sourceRef="Task_AnalyzeRisks" targetRef="Gateway_JoinPlanning_V3" />
+    <bpmn:sequenceFlow id="Flow_Join_GeneratePlan" sourceRef="Gateway_JoinPlanning_V3" targetRef="Task_GenerateImplPlan" />
+    <bpmn:sequenceFlow id="Flow_Plan_End" sourceRef="Task_GenerateImplPlan" targetRef="Event_ImplPlanEnd_V3" />
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ImplPlan_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_ImplPlan_V3" bpmnElement="Process_ImplPlan_V3">
+
+      <bpmndi:BPMNShape id="Event_ImplPlanStart_V3_di" bpmnElement="Event_ImplPlanStart_V3">
+        <dc:Bounds x="180" y="210" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_ParallelPlanning_V3_di" bpmnElement="Gateway_ParallelPlanning_V3">
+        <dc:Bounds x="270" y="203" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_FormTeam_di" bpmnElement="Task_FormTeam">
+        <dc:Bounds x="370" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_DefineScope_di" bpmnElement="Task_DefineScope">
+        <dc:Bounds x="370" y="188" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_AnalyzeRisks_di" bpmnElement="Task_AnalyzeRisks">
+        <dc:Bounds x="370" y="288" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_JoinPlanning_V3_di" bpmnElement="Gateway_JoinPlanning_V3">
+        <dc:Bounds x="520" y="203" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_GenerateImplPlan_di" bpmnElement="Task_GenerateImplPlan">
+        <dc:Bounds x="620" y="188" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_ImplPlanEnd_V3_di" bpmnElement="Event_ImplPlanEnd_V3">
+        <dc:Bounds x="772" y="210" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_Parallel_di" bpmnElement="Flow_Start_Parallel">
+        <di:waypoint x="216" y="228" />
+        <di:waypoint x="270" y="228" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Team_di" bpmnElement="Flow_To_Team">
+        <di:waypoint x="295" y="203" />
+        <di:waypoint x="295" y="140" />
+        <di:waypoint x="370" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Scope_di" bpmnElement="Flow_To_Scope">
+        <di:waypoint x="320" y="228" />
+        <di:waypoint x="370" y="228" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Risks_di" bpmnElement="Flow_To_Risks">
+        <di:waypoint x="295" y="253" />
+        <di:waypoint x="295" y="328" />
+        <di:waypoint x="370" y="328" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Team_Join_di" bpmnElement="Flow_Team_Join">
+        <di:waypoint x="470" y="140" />
+        <di:waypoint x="545" y="140" />
+        <di:waypoint x="545" y="203" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Scope_Join_di" bpmnElement="Flow_Scope_Join">
+        <di:waypoint x="470" y="228" />
+        <di:waypoint x="520" y="228" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Risks_Join_di" bpmnElement="Flow_Risks_Join">
+        <di:waypoint x="470" y="328" />
+        <di:waypoint x="545" y="328" />
+        <di:waypoint x="545" y="253" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Join_GeneratePlan_di" bpmnElement="Flow_Join_GeneratePlan">
+        <di:waypoint x="570" y="228" />
+        <di:waypoint x="620" y="228" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Plan_End_di" bpmnElement="Flow_Plan_End">
+        <di:waypoint x="720" y="228" />
+        <di:waypoint x="772" y="228" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

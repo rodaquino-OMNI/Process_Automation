@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   id="Definitions_PostLaunchSetup_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_PostLaunchSetup_V3" name="Configuração Pós-Lançamento V3 (Days 1-7)" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_SetupStart_V3" name="Início Day 1">
+      <bpmn:outgoing>Flow_Start_Support</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- Day 1: Initial Support Setup -->
+    <bpmn:serviceTask id="Task_SetupInitialSupport" name="Configurar Suporte Inicial" camunda:type="external" camunda:topic="setup-initial-support">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="supportLevel">premium</camunda:inputParameter>
+          <camunda:inputParameter name="responseTime">P1H</camunda:inputParameter>
+          <camunda:outputParameter name="supportTicketSystemId">${supportTicketSystemId}</camunda:outputParameter>
+          <camunda:outputParameter name="dedicatedSupportTeam">${dedicatedSupportTeam}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_Support</bpmn:incoming>
+      <bpmn:outgoing>Flow_Support_CheckIn</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Day 2-3: First Check-in -->
+    <bpmn:userTask id="Task_FirstCheckIn" name="Primeiro Check-in (Day 2-3)" camunda:assignee="${customerSuccessManager}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="userAdoption" label="Adoção de Usuários (%)" type="long" />
+          <camunda:formField id="technicalIssues" label="Problemas Técnicos?" type="boolean" />
+          <camunda:formField id="issueDescription" label="Descrição de Problemas" type="string" />
+          <camunda:formField id="customerSentiment" label="Sentimento do Cliente (1-10)" type="long" />
+          <camunda:formField id="additionalSupportNeeded" label="Suporte Adicional Necessário?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Support_CheckIn</bpmn:incoming>
+      <bpmn:outgoing>Flow_CheckIn_Gateway</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Evaluate Issues -->
+    <bpmn:exclusiveGateway id="Gateway_EvaluateIssues" name="Issues?">
+      <bpmn:incoming>Flow_CheckIn_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_HasIssues</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NoIssues</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Issue Resolution Path -->
+    <bpmn:userTask id="Task_ResolveIssues" name="Resolver Problemas (Day 4-5)" camunda:assignee="${technicalSupportLead}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="resolutionApproach" label="Abordagem de Resolução" type="string" />
+          <camunda:formField id="issuesResolved" label="Problemas Resolvidos?" type="boolean" />
+          <camunda:formField id="resolutionNotes" label="Notas de Resolução" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_HasIssues</bpmn:incoming>
+      <bpmn:outgoing>Flow_Resolve_Merge</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Merge Gateway -->
+    <bpmn:exclusiveGateway id="Gateway_MergeSetup" name="Merge">
+      <bpmn:incoming>Flow_Resolve_Merge</bpmn:incoming>
+      <bpmn:incoming>Flow_NoIssues</bpmn:incoming>
+      <bpmn:outgoing>Flow_Merge_FinalReview</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Day 6-7: Final Review -->
+    <bpmn:userTask id="Task_FinalReview_Day7" name="Revisão Final (Day 6-7)" camunda:assignee="${customerSuccessManager}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="setupComplete" label="Configuração Completa?" type="boolean" />
+          <camunda:formField id="transitionToNormalSupport" label="Transição para Suporte Normal?" type="boolean" />
+          <camunda:formField id="day7Summary" label="Resumo Day 7" type="string" />
+          <camunda:formField id="nextSteps" label="Próximos Passos" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Merge_FinalReview</bpmn:incoming>
+      <bpmn:outgoing>Flow_FinalReview_Notify</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Notify Stakeholders -->
+    <bpmn:sendTask id="Task_NotifyStakeholders" name="Notificar Stakeholders" camunda:type="external" camunda:topic="notify-post-launch-stakeholders">
+      <bpmn:incoming>Flow_FinalReview_Notify</bpmn:incoming>
+      <bpmn:outgoing>Flow_Notify_End</bpmn:outgoing>
+    </bpmn:sendTask>
+
+    <bpmn:endEvent id="Event_SetupEnd_V3" name="Setup Day 1-7 Concluído">
+      <bpmn:incoming>Flow_Notify_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_Support" sourceRef="Event_SetupStart_V3" targetRef="Task_SetupInitialSupport" />
+    <bpmn:sequenceFlow id="Flow_Support_CheckIn" sourceRef="Task_SetupInitialSupport" targetRef="Task_FirstCheckIn" />
+    <bpmn:sequenceFlow id="Flow_CheckIn_Gateway" sourceRef="Task_FirstCheckIn" targetRef="Gateway_EvaluateIssues" />
+
+    <bpmn:sequenceFlow id="Flow_HasIssues" name="Sim" sourceRef="Gateway_EvaluateIssues" targetRef="Task_ResolveIssues">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${technicalIssues == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_NoIssues" name="Não" sourceRef="Gateway_EvaluateIssues" targetRef="Gateway_MergeSetup">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${technicalIssues == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Resolve_Merge" sourceRef="Task_ResolveIssues" targetRef="Gateway_MergeSetup" />
+    <bpmn:sequenceFlow id="Flow_Merge_FinalReview" sourceRef="Gateway_MergeSetup" targetRef="Task_FinalReview_Day7" />
+    <bpmn:sequenceFlow id="Flow_FinalReview_Notify" sourceRef="Task_FinalReview_Day7" targetRef="Task_NotifyStakeholders" />
+    <bpmn:sequenceFlow id="Flow_Notify_End" sourceRef="Task_NotifyStakeholders" targetRef="Event_SetupEnd_V3" />
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_PostLaunchSetup_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_PostLaunchSetup_V3" bpmnElement="Process_PostLaunchSetup_V3">
+
+      <bpmndi:BPMNShape id="Event_SetupStart_V3_di" bpmnElement="Event_SetupStart_V3">
+        <dc:Bounds x="180" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_SetupInitialSupport_di" bpmnElement="Task_SetupInitialSupport">
+        <dc:Bounds x="270" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_FirstCheckIn_di" bpmnElement="Task_FirstCheckIn">
+        <dc:Bounds x="420" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_EvaluateIssues_di" bpmnElement="Gateway_EvaluateIssues" isMarkerVisible="true">
+        <dc:Bounds x="570" y="193" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ResolveIssues_di" bpmnElement="Task_ResolveIssues">
+        <dc:Bounds x="670" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_MergeSetup_di" bpmnElement="Gateway_MergeSetup" isMarkerVisible="true">
+        <dc:Bounds x="820" y="193" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_FinalReview_Day7_di" bpmnElement="Task_FinalReview_Day7">
+        <dc:Bounds x="920" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_NotifyStakeholders_di" bpmnElement="Task_NotifyStakeholders">
+        <dc:Bounds x="1070" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_SetupEnd_V3_di" bpmnElement="Event_SetupEnd_V3">
+        <dc:Bounds x="1222" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_Support_di" bpmnElement="Flow_Start_Support">
+        <di:waypoint x="216" y="218" />
+        <di:waypoint x="270" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Support_CheckIn_di" bpmnElement="Flow_Support_CheckIn">
+        <di:waypoint x="370" y="218" />
+        <di:waypoint x="420" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_CheckIn_Gateway_di" bpmnElement="Flow_CheckIn_Gateway">
+        <di:waypoint x="520" y="218" />
+        <di:waypoint x="570" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_HasIssues_di" bpmnElement="Flow_HasIssues">
+        <di:waypoint x="595" y="193" />
+        <di:waypoint x="595" y="140" />
+        <di:waypoint x="670" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_NoIssues_di" bpmnElement="Flow_NoIssues">
+        <di:waypoint x="620" y="218" />
+        <di:waypoint x="820" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Resolve_Merge_di" bpmnElement="Flow_Resolve_Merge">
+        <di:waypoint x="770" y="140" />
+        <di:waypoint x="845" y="140" />
+        <di:waypoint x="845" y="193" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Merge_FinalReview_di" bpmnElement="Flow_Merge_FinalReview">
+        <di:waypoint x="870" y="218" />
+        <di:waypoint x="920" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_FinalReview_Notify_di" bpmnElement="Flow_FinalReview_Notify">
+        <di:waypoint x="1020" y="218" />
+        <di:waypoint x="1070" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Notify_End_di" bpmnElement="Flow_Notify_End">
+        <di:waypoint x="1170" y="218" />
+        <di:waypoint x="1222" y="218" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

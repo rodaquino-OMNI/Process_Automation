@@ -1,0 +1,788 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="KpiAnalysisDecision" name="KPI Analysis Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.20.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.4.0">
+  <decision id="Decision_KpiAnalysis" name="KPI Analysis Decision">
+    <decisionTable id="DecisionTable_KpiAnalysis" hitPolicy="FIRST">
+      <input id="Input_ConversionRate" label="Conversion Rate %">
+        <inputExpression id="InputExpression_ConversionRate" typeRef="number">
+          <text>conversionRate</text>
+        </inputExpression>
+      </input>
+      <input id="Input_AvgDealSize" label="Avg Deal Size">
+        <inputExpression id="InputExpression_AvgDealSize" typeRef="number">
+          <text>avgDealSize</text>
+        </inputExpression>
+      </input>
+      <input id="Input_SalesCycleTime" label="Sales Cycle (days)">
+        <inputExpression id="InputExpression_SalesCycleTime" typeRef="number">
+          <text>salesCycleTime</text>
+        </inputExpression>
+      </input>
+      <input id="Input_LeadResponseTime" label="Response Time (hours)">
+        <inputExpression id="InputExpression_LeadResponseTime" typeRef="number">
+          <text>leadResponseTime</text>
+        </inputExpression>
+      </input>
+      <input id="Input_CustomerSatisfaction" label="CSAT Score">
+        <inputExpression id="InputExpression_CustomerSatisfaction" typeRef="number">
+          <text>customerSatisfaction</text>
+        </inputExpression>
+      </input>
+      <input id="Input_ChurnRate" label="Churn Rate %">
+        <inputExpression id="InputExpression_ChurnRate" typeRef="number">
+          <text>churnRate</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Ltv" label="LTV">
+        <inputExpression id="InputExpression_Ltv" typeRef="number">
+          <text>ltv</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Cac" label="CAC">
+        <inputExpression id="InputExpression_Cac" typeRef="number">
+          <text>cac</text>
+        </inputExpression>
+      </input>
+      <input id="Input_WinRate" label="Win Rate %">
+        <inputExpression id="InputExpression_WinRate" typeRef="number">
+          <text>winRate</text>
+        </inputExpression>
+      </input>
+      <input id="Input_PipelineVelocity" label="Pipeline Velocity">
+        <inputExpression id="InputExpression_PipelineVelocity" typeRef="number">
+          <text>pipelineVelocity</text>
+        </inputExpression>
+      </input>
+      <input id="Input_AvgResponseTime" label="Avg Response (hours)">
+        <inputExpression id="InputExpression_AvgResponseTime" typeRef="number">
+          <text>avgResponseTime</text>
+        </inputExpression>
+      </input>
+      <input id="Input_QuotaAttainment" label="Quota Attainment %">
+        <inputExpression id="InputExpression_QuotaAttainment" typeRef="number">
+          <text>quotaAttainment</text>
+        </inputExpression>
+      </input>
+      <input id="Input_MrrGrowth" label="MRR Growth %">
+        <inputExpression id="InputExpression_MrrGrowth" typeRef="number">
+          <text>mrrGrowth</text>
+        </inputExpression>
+      </input>
+      <input id="Input_NetPromoterScore" label="NPS">
+        <inputExpression id="InputExpression_NetPromoterScore" typeRef="number">
+          <text>netPromoterScore</text>
+        </inputExpression>
+      </input>
+      <output id="Output_HealthScore" label="Health Score" name="healthScore" typeRef="number" />
+      <output id="Output_InterventionRequired" label="Intervention Required" name="interventionRequired" typeRef="boolean" />
+      <output id="Output_RiskLevel" label="Risk Level" name="riskLevel" typeRef="string">
+        <outputValues id="UnaryTests_RiskLevel">
+          <text>"CRITICAL","HIGH","MEDIUM","LOW","MINIMAL"</text>
+        </outputValues>
+      </output>
+      <output id="Output_Actions" label="Recommended Actions" name="actions" typeRef="string" />
+
+      <!-- Rule 1: CRITICAL - Multiple Failing KPIs -->
+      <rule id="DecisionRule_1">
+        <inputEntry id="UnaryTests_ConversionRate_1">
+          <text>&lt; 5</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_1">
+          <text>&lt; 50000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_1">
+          <text>&gt; 120</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_1">
+          <text>&gt; 48</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_1">
+          <text>&lt; 6.0</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_1">
+          <text>&gt; 15</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_1">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_1">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_1">
+          <text>&lt; 15</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_1">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_1">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_1">
+          <text>&lt; 50</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_1">
+          <text>&lt; 0</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_1">
+          <text>&lt; 0</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_1">
+          <text>15</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_1">
+          <text>true</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_1">
+          <text>"CRITICAL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_1">
+          <text>"URGENT: Executive intervention required | Conduct full process audit | Implement emergency action plan | Review team structure"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 2: CRITICAL - High Churn + Low CSAT -->
+      <rule id="DecisionRule_2">
+        <inputEntry id="UnaryTests_ConversionRate_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_2">
+          <text>&lt; 6.5</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_2">
+          <text>&gt; 12</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_2">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_2">
+          <text>&lt; 2</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_2">
+          <text>&lt; 10</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_2">
+          <text>20</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_2">
+          <text>true</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_2">
+          <text>"CRITICAL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_2">
+          <text>"Customer retention crisis | Launch win-back campaigns | Implement CS improvement program | Conduct customer interviews"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 3: HIGH RISK - Poor LTV:CAC Ratio -->
+      <rule id="DecisionRule_3">
+        <inputEntry id="UnaryTests_ConversionRate_3">
+          <text>&lt; 8</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_3">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_3">
+          <text>&gt; 90</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_3">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_3">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_3">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_3">
+          <text>&lt; 100000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_3">
+          <text>&gt; 50000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_3">
+          <text>&lt; 20</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_3">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_3">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_3">
+          <text>&lt; 60</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_3">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_3">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_3">
+          <text>28</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_3">
+          <text>true</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_3">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_3">
+          <text>"Economics unsustainable | Reduce CAC through automation | Improve lead quality | Optimize sales process"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 4: HIGH RISK - Low Win Rate + Long Sales Cycle -->
+      <rule id="DecisionRule_4">
+        <inputEntry id="UnaryTests_ConversionRate_4">
+          <text>&lt; 10</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_4">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_4">
+          <text>&gt; 90</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_4">
+          <text>&gt; 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_4">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_4">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_4">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_4">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_4">
+          <text>&lt; 22</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_4">
+          <text>&lt; 0.5</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_4">
+          <text>&gt; 12</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_4">
+          <text>&lt; 65</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_4">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_4">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_4">
+          <text>32</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_4">
+          <text>true</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_4">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_4">
+          <text>"Sales process inefficient | Implement lead scoring | Accelerate qualification | Provide sales enablement training"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 5: HIGH RISK - Poor Quota Attainment -->
+      <rule id="DecisionRule_5">
+        <inputEntry id="UnaryTests_ConversionRate_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_5">
+          <text>&lt; 80000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_5">
+          <text>&gt; 10</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_5">
+          <text>&lt; 70</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_5">
+          <text>&lt; 3</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_5">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_5">
+          <text>35</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_5">
+          <text>true</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_5">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_5">
+          <text>"Revenue at risk | Review team performance | Adjust territories | Increase pipeline generation"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 6: MEDIUM RISK - Moderate Issues -->
+      <rule id="DecisionRule_6">
+        <inputEntry id="UnaryTests_ConversionRate_6">
+          <text>[8..12]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_6">
+          <text>[80000..120000]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_6">
+          <text>[70..89]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_6">
+          <text>[12..24]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_6">
+          <text>[6.5..7.4]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_6">
+          <text>[8..10]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_6">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_6">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_6">
+          <text>[22..28]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_6">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_6">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_6">
+          <text>[70..84]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_6">
+          <text>[3..7]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_6">
+          <text>[10..30]</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_6">
+          <text>48</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_6">
+          <text>true</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_6">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_6">
+          <text>"Performance below target | Optimize sales playbooks | Improve lead nurturing | Enhance CS engagement"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 7: MEDIUM RISK - Response Time Issues -->
+      <rule id="DecisionRule_7">
+        <inputEntry id="UnaryTests_ConversionRate_7">
+          <text>[10..15]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_7">
+          <text>[60..79]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_7">
+          <text>[8..24]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_7">
+          <text>[6..12]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_7">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_7">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_7">
+          <text>52</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_7">
+          <text>true</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_7">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_7">
+          <text>"Speed-to-lead needs improvement | Implement auto-responders | Optimize routing | Set SLA alerts"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 8: MEDIUM RISK - Growth Stagnation -->
+      <rule id="DecisionRule_8">
+        <inputEntry id="UnaryTests_ConversionRate_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_8">
+          <text>[7.0..7.9]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_8">
+          <text>[6..8]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_8">
+          <text>[0.5..1.0]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_8">
+          <text>[80..89]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_8">
+          <text>[5..8]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_8">
+          <text>[25..40]</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_8">
+          <text>58</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_8">
+          <text>false</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_8">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_8">
+          <text>"Growth plateauing | Explore new markets | Launch expansion campaigns | Improve upsell motion"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 9: LOW RISK - Good Performance with Minor Issues -->
+      <rule id="DecisionRule_9">
+        <inputEntry id="UnaryTests_ConversionRate_9">
+          <text>[15..20]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_9">
+          <text>[120000..180000]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_9">
+          <text>[45..59]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_9">
+          <text>[4..8]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_9">
+          <text>[7.5..8.4]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_9">
+          <text>[4..6]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_9">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_9">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_9">
+          <text>[28..35]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_9">
+          <text>[1.0..1.5]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_9">
+          <text>[3..6]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_9">
+          <text>[85..94]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_9">
+          <text>[8..12]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_9">
+          <text>[40..55]</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_9">
+          <text>72</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_9">
+          <text>false</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_9">
+          <text>"LOW"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_9">
+          <text>"Solid performance | Fine-tune processes | Focus on scaling winners | Document best practices"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 10: LOW RISK - Strong Fundamentals -->
+      <rule id="DecisionRule_10">
+        <inputEntry id="UnaryTests_ConversionRate_10">
+          <text>[18..25]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_10">
+          <text>&gt;= 150000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_10">
+          <text>[30..45]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_10">
+          <text>&lt;= 4</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_10">
+          <text>&gt;= 8.0</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_10">
+          <text>&lt;= 4</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_10">
+          <text>&gt;= 200000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_10">
+          <text>&lt;= 40000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_10">
+          <text>&gt;= 30</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_10">
+          <text>&gt;= 1.2</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_10">
+          <text>&lt;= 4</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_10">
+          <text>&gt;= 90</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_10">
+          <text>&gt;= 10</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_10">
+          <text>&gt;= 50</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_10">
+          <text>82</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_10">
+          <text>false</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_10">
+          <text>"LOW"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_10">
+          <text>"Strong performance | Maintain momentum | Scale successful strategies | Consider stretch goals"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 11: MINIMAL RISK - Excellent Performance -->
+      <rule id="DecisionRule_11">
+        <inputEntry id="UnaryTests_ConversionRate_11">
+          <text>&gt;= 25</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_11">
+          <text>&gt;= 200000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_11">
+          <text>&lt;= 30</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_11">
+          <text>&lt;= 2</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_11">
+          <text>&gt;= 8.5</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_11">
+          <text>&lt;= 3</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_11">
+          <text>&gt;= 300000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_11">
+          <text>&lt;= 35000</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_11">
+          <text>&gt;= 40</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_11">
+          <text>&gt;= 1.8</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_11">
+          <text>&lt;= 2</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_11">
+          <text>&gt;= 100</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_11">
+          <text>&gt;= 15</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_11">
+          <text>&gt;= 60</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_11">
+          <text>95</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_11">
+          <text>false</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_11">
+          <text>"MINIMAL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_11">
+          <text>"Outstanding performance | Capture and replicate success | Benchmark for team | Plan aggressive expansion"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 12: Default Fallback -->
+      <rule id="DecisionRule_12">
+        <inputEntry id="UnaryTests_ConversionRate_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgDealSize_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_SalesCycleTime_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_LeadResponseTime_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CustomerSatisfaction_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ChurnRate_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Ltv_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Cac_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_WinRate_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_PipelineVelocity_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_AvgResponseTime_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_QuotaAttainment_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_MrrGrowth_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_NetPromoterScore_12">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HealthScore_12">
+          <text>50</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_InterventionRequired_12">
+          <text>false</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RiskLevel_12">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Actions_12">
+          <text>"Insufficient data for analysis | Ensure KPI tracking | Establish baselines | Monitor for 30 days"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape dmnElementRef="Decision_KpiAnalysis">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

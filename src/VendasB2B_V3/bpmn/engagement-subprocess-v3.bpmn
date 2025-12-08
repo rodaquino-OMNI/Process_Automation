@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   id="Definitions_Engagement_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_Engagement_V3" name="Engajamento Stakeholders V3" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_EngagementStart_V3" name="Iniciar Engajamento V3">
+      <bpmn:outgoing>Flow_Start_ROICalculator</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- V3 Enhancement: ROI Calculator Service (from V2) -->
+    <bpmn:serviceTask id="Task_ROICalculator_V3" name="Calcular ROI Inicial" camunda:type="external" camunda:topic="roi-calculator-engagement">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="companySize">${companySize}</camunda:inputParameter>
+          <camunda:inputParameter name="currentCosts">${currentCosts}</camunda:inputParameter>
+          <camunda:inputParameter name="painPoints">${painPoints}</camunda:inputParameter>
+          <camunda:outputParameter name="projectedROI">${projectedROI}</camunda:outputParameter>
+          <camunda:outputParameter name="paybackPeriod">${paybackPeriod}</camunda:outputParameter>
+          <camunda:outputParameter name="annualSavings">${annualSavings}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_ROICalculator</bpmn:incoming>
+      <bpmn:outgoing>Flow_ROI_CreatePlan</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Create Engagement Plan -->
+    <bpmn:userTask id="Task_CreateEngagementPlan_V3" name="Criar Plano de Engajamento" camunda:assignee="${vendedorResponsavel}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="estrategiaCEO" label="Estratégia CEO" type="string" />
+          <camunda:formField id="estrategiaCFO" label="Estratégia CFO" type="string" />
+          <camunda:formField id="estrategiaDirClinico" label="Estratégia Diretor Clínico" type="string" />
+          <camunda:formField id="estrategiaInfluenciadores" label="Estratégia Influenciadores" type="string" />
+          <camunda:formField id="sequenciaEngajamento" label="Sequência de Engajamento" type="enum">
+            <camunda:value id="ceo_primeiro" name="CEO Primeiro" />
+            <camunda:value id="paralelo" name="Abordagem Paralela" />
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ROI_CreatePlan</bpmn:incoming>
+      <bpmn:outgoing>Flow_Plan_ParallelGateway</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- V3 Enhancement: Parallel Gateway (4 concurrent stakeholder paths) -->
+    <bpmn:parallelGateway id="Gateway_ParallelEngagement_V3" name="Engajamento Paralelo (4 Vias)">
+      <bpmn:incoming>Flow_Plan_ParallelGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_CEO</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_CFO</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Clinical</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Influencers</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- CEO Path -->
+    <bpmn:userTask id="Task_EngageCEO_V3" name="Engajar CEO/Diretor Geral" camunda:assignee="${vendedorResponsavel}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="ceoContatado" label="CEO Contatado?" type="boolean" />
+          <camunda:formField id="ceoMetodoContato" label="Método de Contato" type="enum">
+            <camunda:value id="ligacao_direta" name="Ligação Direta" />
+            <camunda:value id="email_executivo" name="Email Executivo" />
+            <camunda:value id="linkedin" name="LinkedIn" />
+            <camunda:value id="intro_champion" name="Introdução via Champion" />
+          </camunda:formField>
+          <camunda:formField id="ceoResposta" label="Resposta do CEO" type="string" />
+          <camunda:formField id="ceoInsights" label="Insights CEO" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_To_CEO</bpmn:incoming>
+      <bpmn:outgoing>Flow_CEO_Material</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:sendTask id="Task_SendCEOMaterial_V3" name="Enviar Material Executivo" camunda:type="external" camunda:topic="send-executive-material">
+      <bpmn:incoming>Flow_CEO_Material</bpmn:incoming>
+      <bpmn:outgoing>Flow_CEO_Join</bpmn:outgoing>
+    </bpmn:sendTask>
+
+    <!-- CFO Path -->
+    <bpmn:userTask id="Task_EngageCFO_V3" name="Engajar CFO/Diretor Financeiro" camunda:assignee="${vendedorResponsavel}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="cfoContatado" label="CFO Contatado?" type="boolean" />
+          <camunda:formField id="cfoInteresseROI" label="Interesse ROI (1-10)" type="long" />
+          <camunda:formField id="cfoObjecoes" label="Principais Objeções Financeiras" type="string" />
+          <camunda:formField id="cfoNecessitaDetalhamento" label="Necessita Detalhamento Financeiro?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_To_CFO</bpmn:incoming>
+      <bpmn:outgoing>Flow_CFO_ROI</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Task_GenerateCustomROI_V3" name="Gerar ROI Customizado" camunda:type="external" camunda:topic="generate-custom-roi">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="baseROI">${projectedROI}</camunda:inputParameter>
+          <camunda:inputParameter name="cfoObjecoes">${cfoObjecoes}</camunda:inputParameter>
+          <camunda:outputParameter name="customROIReport">${customROIReport}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CFO_ROI</bpmn:incoming>
+      <bpmn:outgoing>Flow_CFO_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Clinical Director Path -->
+    <bpmn:userTask id="Task_EngageClinical_V3" name="Engajar Diretor Clínico" camunda:assignee="${vendedorResponsavel}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="clinicoContatado" label="Diretor Clínico Contatado?" type="boolean" />
+          <camunda:formField id="clinicoPreocupacoes" label="Preocupações Clínicas" type="string" />
+          <camunda:formField id="clinicoInteresseQualidade" label="Interesse em Qualidade (1-10)" type="long" />
+          <camunda:formField id="clinicoNecessitaCasosUso" label="Necessita Casos de Uso Clínicos?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_To_Clinical</bpmn:incoming>
+      <bpmn:outgoing>Flow_Clinical_Cases</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:sendTask id="Task_SendClinicalCases_V3" name="Enviar Casos Clínicos" camunda:type="external" camunda:topic="send-clinical-cases">
+      <bpmn:incoming>Flow_Clinical_Cases</bpmn:incoming>
+      <bpmn:outgoing>Flow_Clinical_Join</bpmn:outgoing>
+    </bpmn:sendTask>
+
+    <!-- Influencers Path -->
+    <bpmn:userTask id="Task_EngageInfluencers_V3" name="Engajar Influenciadores" camunda:assignee="${vendedorResponsavel}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="influenciadoresIdentificados" label="Influenciadores Identificados" type="string" />
+          <camunda:formField id="influenciadoresEngajados" label="Número de Influenciadores Engajados" type="long" />
+          <camunda:formField id="apoioInfluenciadores" label="Nível de Apoio (1-10)" type="long" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_To_Influencers</bpmn:incoming>
+      <bpmn:outgoing>Flow_Influencers_Join</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Join Gateway -->
+    <bpmn:parallelGateway id="Gateway_JoinEngagement_V3" name="Unir Engajamento">
+      <bpmn:incoming>Flow_CEO_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_CFO_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Clinical_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Influencers_Join</bpmn:incoming>
+      <bpmn:outgoing>Flow_Join_AnalyzeResults</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- Analyze Engagement Results -->
+    <bpmn:businessRuleTask id="Task_AnalyzeEngagement_V3" name="Analisar Resultados de Engajamento"
+                           camunda:resultVariable="engagementScore"
+                           camunda:decisionRef="decision_engagement_score"
+                           camunda:mapDecisionResult="singleEntry">
+      <bpmn:incoming>Flow_Join_AnalyzeResults</bpmn:incoming>
+      <bpmn:outgoing>Flow_Analyze_UpdateCRM</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- Update CRM -->
+    <bpmn:serviceTask id="Task_UpdateCRM_V3" name="Atualizar CRM" camunda:type="external" camunda:topic="crm-update-engagement">
+      <bpmn:incoming>Flow_Analyze_UpdateCRM</bpmn:incoming>
+      <bpmn:outgoing>Flow_CRM_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- End Event -->
+    <bpmn:endEvent id="Event_EngagementEnd_V3" name="Engajamento V3 Concluído">
+      <bpmn:incoming>Flow_CRM_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_ROICalculator" sourceRef="Event_EngagementStart_V3" targetRef="Task_ROICalculator_V3" />
+    <bpmn:sequenceFlow id="Flow_ROI_CreatePlan" sourceRef="Task_ROICalculator_V3" targetRef="Task_CreateEngagementPlan_V3" />
+    <bpmn:sequenceFlow id="Flow_Plan_ParallelGateway" sourceRef="Task_CreateEngagementPlan_V3" targetRef="Gateway_ParallelEngagement_V3" />
+
+    <bpmn:sequenceFlow id="Flow_To_CEO" sourceRef="Gateway_ParallelEngagement_V3" targetRef="Task_EngageCEO_V3" />
+    <bpmn:sequenceFlow id="Flow_To_CFO" sourceRef="Gateway_ParallelEngagement_V3" targetRef="Task_EngageCFO_V3" />
+    <bpmn:sequenceFlow id="Flow_To_Clinical" sourceRef="Gateway_ParallelEngagement_V3" targetRef="Task_EngageClinical_V3" />
+    <bpmn:sequenceFlow id="Flow_To_Influencers" sourceRef="Gateway_ParallelEngagement_V3" targetRef="Task_EngageInfluencers_V3" />
+
+    <bpmn:sequenceFlow id="Flow_CEO_Material" sourceRef="Task_EngageCEO_V3" targetRef="Task_SendCEOMaterial_V3" />
+    <bpmn:sequenceFlow id="Flow_CEO_Join" sourceRef="Task_SendCEOMaterial_V3" targetRef="Gateway_JoinEngagement_V3" />
+
+    <bpmn:sequenceFlow id="Flow_CFO_ROI" sourceRef="Task_EngageCFO_V3" targetRef="Task_GenerateCustomROI_V3" />
+    <bpmn:sequenceFlow id="Flow_CFO_Join" sourceRef="Task_GenerateCustomROI_V3" targetRef="Gateway_JoinEngagement_V3" />
+
+    <bpmn:sequenceFlow id="Flow_Clinical_Cases" sourceRef="Task_EngageClinical_V3" targetRef="Task_SendClinicalCases_V3" />
+    <bpmn:sequenceFlow id="Flow_Clinical_Join" sourceRef="Task_SendClinicalCases_V3" targetRef="Gateway_JoinEngagement_V3" />
+
+    <bpmn:sequenceFlow id="Flow_Influencers_Join" sourceRef="Task_EngageInfluencers_V3" targetRef="Gateway_JoinEngagement_V3" />
+
+    <bpmn:sequenceFlow id="Flow_Join_AnalyzeResults" sourceRef="Gateway_JoinEngagement_V3" targetRef="Task_AnalyzeEngagement_V3" />
+    <bpmn:sequenceFlow id="Flow_Analyze_UpdateCRM" sourceRef="Task_AnalyzeEngagement_V3" targetRef="Task_UpdateCRM_V3" />
+    <bpmn:sequenceFlow id="Flow_CRM_End" sourceRef="Task_UpdateCRM_V3" targetRef="Event_EngagementEnd_V3" />
+
+  </bpmn:process>
+
+  <!-- BPMN Diagram -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Engagement_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_Engagement_V3" bpmnElement="Process_Engagement_V3">
+
+      <bpmndi:BPMNShape id="Event_EngagementStart_V3_di" bpmnElement="Event_EngagementStart_V3">
+        <dc:Bounds x="180" y="220" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ROICalculator_V3_di" bpmnElement="Task_ROICalculator_V3">
+        <dc:Bounds x="270" y="198" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_CreateEngagementPlan_V3_di" bpmnElement="Task_CreateEngagementPlan_V3">
+        <dc:Bounds x="420" y="198" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_ParallelEngagement_V3_di" bpmnElement="Gateway_ParallelEngagement_V3">
+        <dc:Bounds x="570" y="213" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <!-- CEO Path -->
+      <bpmndi:BPMNShape id="Task_EngageCEO_V3_di" bpmnElement="Task_EngageCEO_V3">
+        <dc:Bounds x="670" y="60" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_SendCEOMaterial_V3_di" bpmnElement="Task_SendCEOMaterial_V3">
+        <dc:Bounds x="820" y="60" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- CFO Path -->
+      <bpmndi:BPMNShape id="Task_EngageCFO_V3_di" bpmnElement="Task_EngageCFO_V3">
+        <dc:Bounds x="670" y="160" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_GenerateCustomROI_V3_di" bpmnElement="Task_GenerateCustomROI_V3">
+        <dc:Bounds x="820" y="160" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Clinical Path -->
+      <bpmndi:BPMNShape id="Task_EngageClinical_V3_di" bpmnElement="Task_EngageClinical_V3">
+        <dc:Bounds x="670" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_SendClinicalCases_V3_di" bpmnElement="Task_SendClinicalCases_V3">
+        <dc:Bounds x="820" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Influencers Path -->
+      <bpmndi:BPMNShape id="Task_EngageInfluencers_V3_di" bpmnElement="Task_EngageInfluencers_V3">
+        <dc:Bounds x="670" y="360" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Join -->
+      <bpmndi:BPMNShape id="Gateway_JoinEngagement_V3_di" bpmnElement="Gateway_JoinEngagement_V3">
+        <dc:Bounds x="970" y="213" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_AnalyzeEngagement_V3_di" bpmnElement="Task_AnalyzeEngagement_V3">
+        <dc:Bounds x="1070" y="198" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_UpdateCRM_V3_di" bpmnElement="Task_UpdateCRM_V3">
+        <dc:Bounds x="1220" y="198" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_EngagementEnd_V3_di" bpmnElement="Event_EngagementEnd_V3">
+        <dc:Bounds x="1372" y="220" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_ROICalculator_di" bpmnElement="Flow_Start_ROICalculator">
+        <di:waypoint x="216" y="238" />
+        <di:waypoint x="270" y="238" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_ROI_CreatePlan_di" bpmnElement="Flow_ROI_CreatePlan">
+        <di:waypoint x="370" y="238" />
+        <di:waypoint x="420" y="238" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Plan_ParallelGateway_di" bpmnElement="Flow_Plan_ParallelGateway">
+        <di:waypoint x="520" y="238" />
+        <di:waypoint x="570" y="238" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_CEO_di" bpmnElement="Flow_To_CEO">
+        <di:waypoint x="595" y="213" />
+        <di:waypoint x="595" y="100" />
+        <di:waypoint x="670" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_CFO_di" bpmnElement="Flow_To_CFO">
+        <di:waypoint x="595" y="238" />
+        <di:waypoint x="595" y="200" />
+        <di:waypoint x="670" y="200" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Clinical_di" bpmnElement="Flow_To_Clinical">
+        <di:waypoint x="595" y="263" />
+        <di:waypoint x="595" y="300" />
+        <di:waypoint x="670" y="300" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Influencers_di" bpmnElement="Flow_To_Influencers">
+        <di:waypoint x="595" y="263" />
+        <di:waypoint x="595" y="400" />
+        <di:waypoint x="670" y="400" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_CEO_Material_di" bpmnElement="Flow_CEO_Material">
+        <di:waypoint x="770" y="100" />
+        <di:waypoint x="820" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_CEO_Join_di" bpmnElement="Flow_CEO_Join">
+        <di:waypoint x="920" y="100" />
+        <di:waypoint x="995" y="100" />
+        <di:waypoint x="995" y="213" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_CFO_ROI_di" bpmnElement="Flow_CFO_ROI">
+        <di:waypoint x="770" y="200" />
+        <di:waypoint x="820" y="200" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_CFO_Join_di" bpmnElement="Flow_CFO_Join">
+        <di:waypoint x="920" y="200" />
+        <di:waypoint x="995" y="200" />
+        <di:waypoint x="995" y="213" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Clinical_Cases_di" bpmnElement="Flow_Clinical_Cases">
+        <di:waypoint x="770" y="300" />
+        <di:waypoint x="820" y="300" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Clinical_Join_di" bpmnElement="Flow_Clinical_Join">
+        <di:waypoint x="920" y="300" />
+        <di:waypoint x="995" y="300" />
+        <di:waypoint x="995" y="263" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Influencers_Join_di" bpmnElement="Flow_Influencers_Join">
+        <di:waypoint x="770" y="400" />
+        <di:waypoint x="995" y="400" />
+        <di:waypoint x="995" y="263" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Join_AnalyzeResults_di" bpmnElement="Flow_Join_AnalyzeResults">
+        <di:waypoint x="1020" y="238" />
+        <di:waypoint x="1070" y="238" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Analyze_UpdateCRM_di" bpmnElement="Flow_Analyze_UpdateCRM">
+        <di:waypoint x="1170" y="238" />
+        <di:waypoint x="1220" y="238" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_CRM_End_di" bpmnElement="Flow_CRM_End">
+        <di:waypoint x="1320" y="238" />
+        <di:waypoint x="1372" y="238" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

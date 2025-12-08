@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:camunda="http://camunda.org/schema/1.0/dmn"
+             id="Definitions_ApprovalMatrix"
+             name="AUSTA V3 Approval Matrix"
+             namespace="http://austa.com.br/dmn/v3"
+             exporter="Camunda Modeler"
+             exporterVersion="5.20.0">
+
+  <decision id="Decision_ApprovalMatrix" name="4-Tier Approval Matrix Decision">
+    <decisionTable id="DecisionTable_ApprovalMatrix" hitPolicy="FIRST">
+
+      <!-- INPUT: Deal Value -->
+      <input id="Input_DealValue" label="Deal Value (R$)" camunda:inputVariable="dealValue">
+        <inputExpression id="InputExpression_DealValue" typeRef="long">
+          <text>dealValue</text>
+        </inputExpression>
+      </input>
+
+      <!-- INPUT: Discount Percentage -->
+      <input id="Input_DiscountPercentage" label="Discount (%)" camunda:inputVariable="discountPercentage">
+        <inputExpression id="InputExpression_DiscountPercentage" typeRef="long">
+          <text>discountPercentage</text>
+        </inputExpression>
+      </input>
+
+      <!-- OUTPUT: Approval Tier -->
+      <output id="Output_ApprovalTier" label="Approval Tier" name="approvalTier" typeRef="string" />
+
+      <!-- RULE 1: CEO Approval - Deal Value > $1M -->
+      <rule id="Rule_CEO_HighValue">
+        <description>CEO Approval: Deal value exceeds $1M</description>
+        <inputEntry id="InputEntry_CEO_HighValue_DealValue">
+          <text>&gt; 1000000</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CEO_HighValue_Discount">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_CEO_HighValue">
+          <text>"ceo"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- RULE 2: CEO Approval - Discount > 15% (V2 escalation logic) -->
+      <rule id="Rule_CEO_HighDiscount">
+        <description>CEO Approval: Discount exceeds 15% (executive escalation)</description>
+        <inputEntry id="InputEntry_CEO_HighDiscount_DealValue">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CEO_HighDiscount_Discount">
+          <text>&gt; 15</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_CEO_HighDiscount">
+          <text>"ceo"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- RULE 3: Director Approval - Deal Value $200K-$1M, Discount <= 15% -->
+      <rule id="Rule_Director">
+        <description>Director Approval: Deal value between $200K and $1M</description>
+        <inputEntry id="InputEntry_Director_DealValue">
+          <text>[200000..1000000]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_Director_Discount">
+          <text>&lt;= 15</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_Director">
+          <text>"director"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- RULE 4: Manager Approval - Deal Value $50K-$200K, Discount <= 15% -->
+      <rule id="Rule_Manager">
+        <description>Manager Approval: Deal value between $50K and $200K</description>
+        <inputEntry id="InputEntry_Manager_DealValue">
+          <text>[50000..200000)</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_Manager_Discount">
+          <text>&lt;= 15</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_Manager">
+          <text>"manager"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- RULE 5: Auto-Approval - Deal Value < $50K, Discount < 10% -->
+      <rule id="Rule_AutoApprove">
+        <description>Auto-Approval: Deal value below $50K and discount below 10%</description>
+        <inputEntry id="InputEntry_AutoApprove_DealValue">
+          <text>&lt; 50000</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_AutoApprove_Discount">
+          <text>&lt; 10</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_AutoApprove">
+          <text>"auto"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- RULE 6: Manager Approval - Deal Value < $50K, Discount 10-15% -->
+      <rule id="Rule_Manager_LowValueHighDiscount">
+        <description>Manager Approval: Deal value below $50K but discount 10-15%</description>
+        <inputEntry id="InputEntry_Manager_LowValue_DealValue">
+          <text>&lt; 50000</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_Manager_LowValue_Discount">
+          <text>[10..15]</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_Manager_LowValue">
+          <text>"manager"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- RULE 7: Director Approval - Deal Value $50K-$200K, Discount > 15% but <= 20% -->
+      <rule id="Rule_Director_MediumValueHighDiscount">
+        <description>Director Approval: Deal value $50K-$200K with discount 15-20%</description>
+        <inputEntry id="InputEntry_Director_MediumValue_DealValue">
+          <text>[50000..200000)</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_Director_MediumValue_Discount">
+          <text>(15..20]</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_Director_MediumValue">
+          <text>"director"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- RULE 8: CEO Approval - Deal Value $200K-$1M, Discount > 15% -->
+      <rule id="Rule_CEO_HighValueHighDiscount">
+        <description>CEO Approval: Deal value $200K-$1M with discount above 15%</description>
+        <inputEntry id="InputEntry_CEO_HighValueHighDiscount_DealValue">
+          <text>[200000..1000000]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CEO_HighValueHighDiscount_Discount">
+          <text>&gt; 15</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_CEO_HighValueHighDiscount">
+          <text>"ceo"</text>
+        </outputEntry>
+      </rule>
+
+    </decisionTable>
+  </decision>
+
+  <!-- DMN Diagram (minimal for validation) -->
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_ApprovalMatrix">
+      <dmndi:DMNShape id="DMNShape_Decision" dmnElementRef="Decision_ApprovalMatrix">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+
+</definitions>

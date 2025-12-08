@@ -1,0 +1,194 @@
+# OWASP ZAP Security Scan Configuration for AUSTA V3
+
+env:
+  contexts:
+    - name: AUSTA_B2B_Process
+      urls:
+        - http://localhost:8080/engine-rest.*
+      includePaths:
+        - http://localhost:8080/engine-rest/.*
+      excludePaths:
+        - http://localhost:8080/engine-rest/metrics.*
+      authentication:
+        method: "httpAuthentication"
+        parameters:
+          hostname: "localhost"
+          port: 8080
+          realm: "Camunda"
+
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+      scanOnlyInScope: true
+
+  - type: spider
+    parameters:
+      context: AUSTA_B2B_Process
+      url: http://localhost:8080/engine-rest
+      maxDuration: 10
+      maxDepth: 5
+
+  - type: ajaxSpider
+    parameters:
+      context: AUSTA_B2B_Process
+      url: http://localhost:8080/engine-rest
+      maxDuration: 10
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  - type: activeScan
+    parameters:
+      context: AUSTA_B2B_Process
+      policy: API-Minimal
+      maxRuleDurationInMins: 5
+      maxScanDurationInMins: 30
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: tests/security/reports
+      reportFile: owasp-zap-report
+      reportTitle: AUSTA V3 Security Scan
+      reportDescription: OWASP ZAP security scan for B2B Sales Process
+
+# Alert filters
+alertFilters:
+  - ruleId: 10021 # X-Content-Type-Options Header Missing
+    newRisk: "Info"
+  - ruleId: 10038 # Content Security Policy (CSP) Header Not Set
+    newRisk: "Low"
+
+# Custom scan policies
+scanPolicies:
+  - name: API-Security
+    rules:
+      - id: 40012 # SQL Injection
+        threshold: LOW
+        strength: HIGH
+      - id: 40014 # Cross Site Scripting (XSS)
+        threshold: LOW
+        strength: HIGH
+      - id: 40018 # External Redirect
+        threshold: MEDIUM
+        strength: MEDIUM
+      - id: 40019 # CRLF Injection
+        threshold: MEDIUM
+        strength: MEDIUM
+      - id: 90019 # Code Injection
+        threshold: LOW
+        strength: HIGH
+      - id: 90020 # Remote OS Command Injection
+        threshold: LOW
+        strength: HIGH
+      - id: 90021 # XPath Injection
+        threshold: MEDIUM
+        strength: MEDIUM
+      - id: 90022 # Application Error Disclosure
+        threshold: MEDIUM
+        strength: MEDIUM
+
+# Authentication script
+authenticationScripts:
+  - name: Camunda_Auth
+    type: authentication
+    engine: ECMAScript
+    script: |
+      function authenticate(helper, paramsValues, credentials) {
+        var HttpRequestHeader = Java.type('org.parosproxy.paros.network.HttpRequestHeader');
+        var URI = Java.type('org.apache.commons.httpclient.URI');
+
+        var requestUri = new URI('http://localhost:8080/engine-rest', false);
+        var requestMethod = HttpRequestHeader.GET;
+        var msg = helper.prepareMessage();
+
+        msg.setRequestHeader(new HttpRequestHeader(requestMethod, requestUri, HttpRequestHeader.HTTP11));
+        msg.getRequestHeader().setHeader("Authorization", "Basic " + credentials.getParam("token"));
+
+        helper.sendAndReceive(msg);
+
+        return msg;
+      }
+
+# Test configurations
+testConfigurations:
+  - name: SQL_Injection_Test
+    type: activeScan
+    policy: SQL-Injection
+    targets:
+      - http://localhost:8080/engine-rest/process-definition
+      - http://localhost:8080/engine-rest/process-instance
+      - http://localhost:8080/engine-rest/task
+
+  - name: XSS_Test
+    type: activeScan
+    policy: XSS
+    targets:
+      - http://localhost:8080/engine-rest/process-definition/*/form
+      - http://localhost:8080/engine-rest/task/*/form
+
+  - name: Auth_Test
+    type: activeScan
+    policy: Authentication
+    targets:
+      - http://localhost:8080/engine-rest/user
+      - http://localhost:8080/engine-rest/authorization
+
+  - name: PII_Exposure_Test
+    type: passiveScan
+    scanners:
+      - Private IP Disclosure
+      - Credit Card Number Disclosure
+      - Email Address Disclosure
+    targets:
+      - http://localhost:8080/engine-rest/.*
+
+# Reporting
+reporting:
+  formats:
+    - html
+    - json
+    - xml
+    - md
+  includePassedTests: true
+  includeIgnoredTests: false
+  severity:
+    critical:
+      failBuild: true
+    high:
+      failBuild: true
+    medium:
+      failBuild: false
+    low:
+      failBuild: false
+    info:
+      failBuild: false
+
+# Compliance checks
+compliance:
+  standards:
+    - OWASP_TOP_10_2021
+    - PCI_DSS_V3
+    - GDPR
+    - ANS_REGULATORY
+
+  checks:
+    - name: Data Encryption
+      description: Verify PII data is encrypted at rest
+      severity: CRITICAL
+    - name: Access Control
+      description: Verify RBAC implementation
+      severity: HIGH
+    - name: Audit Logging
+      description: Verify all actions are logged
+      severity: MEDIUM
+    - name: Session Management
+      description: Verify secure session handling
+      severity: HIGH

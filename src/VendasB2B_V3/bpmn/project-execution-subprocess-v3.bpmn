@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   id="Definitions_ProjExec_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_ProjExec_V3" name="Execução Projeto V3" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_ProjExecStart_V3" name="Iniciar Execução">
+      <bpmn:outgoing>Flow_Start_Parallel</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- V3 Enhancement: Parallel Gateway for Execution Activities -->
+    <bpmn:parallelGateway id="Gateway_ParallelExecution_V3" name="Execução Paralela">
+      <bpmn:incoming>Flow_Start_Parallel</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Integration</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Migration</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Training</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- Integration Path -->
+    <bpmn:serviceTask id="Task_SystemIntegration" name="Integração de Sistemas" camunda:type="external" camunda:topic="system-integration">
+      <bpmn:incoming>Flow_To_Integration</bpmn:incoming>
+      <bpmn:outgoing>Flow_Integration_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Migration Path -->
+    <bpmn:serviceTask id="Task_DataMigration" name="Migração de Dados" camunda:type="external" camunda:topic="data-migration">
+      <bpmn:incoming>Flow_To_Migration</bpmn:incoming>
+      <bpmn:outgoing>Flow_Migration_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Training Path -->
+    <bpmn:userTask id="Task_UserTraining" name="Treinamento de Usuários" camunda:assignee="${trainingCoordinator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="trainingModules" label="Módulos de Treinamento" type="string" />
+          <camunda:formField id="participantCount" label="Número de Participantes" type="long" />
+          <camunda:formField id="trainingCompleted" label="Treinamento Concluído?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_To_Training</bpmn:incoming>
+      <bpmn:outgoing>Flow_Training_Join</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- Join Gateway -->
+    <bpmn:parallelGateway id="Gateway_JoinExecution_V3" name="Unir Execução">
+      <bpmn:incoming>Flow_Integration_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Migration_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Training_Join</bpmn:incoming>
+      <bpmn:outgoing>Flow_Join_Validate</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- Validate Execution -->
+    <bpmn:userTask id="Task_ValidateExecution" name="Validar Execução" camunda:assignee="${projectManager}">
+      <bpmn:incoming>Flow_Join_Validate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Validate_End</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:endEvent id="Event_ProjExecEnd_V3" name="Execução Concluída">
+      <bpmn:incoming>Flow_Validate_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_Parallel" sourceRef="Event_ProjExecStart_V3" targetRef="Gateway_ParallelExecution_V3" />
+    <bpmn:sequenceFlow id="Flow_To_Integration" sourceRef="Gateway_ParallelExecution_V3" targetRef="Task_SystemIntegration" />
+    <bpmn:sequenceFlow id="Flow_To_Migration" sourceRef="Gateway_ParallelExecution_V3" targetRef="Task_DataMigration" />
+    <bpmn:sequenceFlow id="Flow_To_Training" sourceRef="Gateway_ParallelExecution_V3" targetRef="Task_UserTraining" />
+    <bpmn:sequenceFlow id="Flow_Integration_Join" sourceRef="Task_SystemIntegration" targetRef="Gateway_JoinExecution_V3" />
+    <bpmn:sequenceFlow id="Flow_Migration_Join" sourceRef="Task_DataMigration" targetRef="Gateway_JoinExecution_V3" />
+    <bpmn:sequenceFlow id="Flow_Training_Join" sourceRef="Task_UserTraining" targetRef="Gateway_JoinExecution_V3" />
+    <bpmn:sequenceFlow id="Flow_Join_Validate" sourceRef="Gateway_JoinExecution_V3" targetRef="Task_ValidateExecution" />
+    <bpmn:sequenceFlow id="Flow_Validate_End" sourceRef="Task_ValidateExecution" targetRef="Event_ProjExecEnd_V3" />
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ProjExec_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_ProjExec_V3" bpmnElement="Process_ProjExec_V3">
+
+      <bpmndi:BPMNShape id="Event_ProjExecStart_V3_di" bpmnElement="Event_ProjExecStart_V3">
+        <dc:Bounds x="180" y="210" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_ParallelExecution_V3_di" bpmnElement="Gateway_ParallelExecution_V3">
+        <dc:Bounds x="270" y="203" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_SystemIntegration_di" bpmnElement="Task_SystemIntegration">
+        <dc:Bounds x="370" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_DataMigration_di" bpmnElement="Task_DataMigration">
+        <dc:Bounds x="370" y="188" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_UserTraining_di" bpmnElement="Task_UserTraining">
+        <dc:Bounds x="370" y="288" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_JoinExecution_V3_di" bpmnElement="Gateway_JoinExecution_V3">
+        <dc:Bounds x="520" y="203" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ValidateExecution_di" bpmnElement="Task_ValidateExecution">
+        <dc:Bounds x="620" y="188" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_ProjExecEnd_V3_di" bpmnElement="Event_ProjExecEnd_V3">
+        <dc:Bounds x="772" y="210" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_Parallel_di" bpmnElement="Flow_Start_Parallel">
+        <di:waypoint x="216" y="228" />
+        <di:waypoint x="270" y="228" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Integration_di" bpmnElement="Flow_To_Integration">
+        <di:waypoint x="295" y="203" />
+        <di:waypoint x="295" y="140" />
+        <di:waypoint x="370" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Migration_di" bpmnElement="Flow_To_Migration">
+        <di:waypoint x="320" y="228" />
+        <di:waypoint x="370" y="228" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Training_di" bpmnElement="Flow_To_Training">
+        <di:waypoint x="295" y="253" />
+        <di:waypoint x="295" y="328" />
+        <di:waypoint x="370" y="328" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Integration_Join_di" bpmnElement="Flow_Integration_Join">
+        <di:waypoint x="470" y="140" />
+        <di:waypoint x="545" y="140" />
+        <di:waypoint x="545" y="203" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Migration_Join_di" bpmnElement="Flow_Migration_Join">
+        <di:waypoint x="470" y="228" />
+        <di:waypoint x="520" y="228" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Training_Join_di" bpmnElement="Flow_Training_Join">
+        <di:waypoint x="470" y="328" />
+        <di:waypoint x="545" y="328" />
+        <di:waypoint x="545" y="253" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Join_Validate_di" bpmnElement="Flow_Join_Validate">
+        <di:waypoint x="570" y="228" />
+        <di:waypoint x="620" y="228" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Validate_End_di" bpmnElement="Flow_Validate_End">
+        <di:waypoint x="720" y="228" />
+        <di:waypoint x="772" y="228" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="ExpansionOpportunityDecision" name="Expansion Opportunity Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.20.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.4.0">
+  <decision id="Decision_ExpansionOpportunity" name="Expansion Opportunity Decision">
+    <decisionTable id="DecisionTable_ExpansionOpportunity" hitPolicy="FIRST">
+      <input id="Input_ContractAge" label="Contract Age (months)">
+        <inputExpression id="InputExpression_ContractAge" typeRef="number">
+          <text>contractAge</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Utilization" label="Utilization %">
+        <inputExpression id="InputExpression_Utilization" typeRef="number">
+          <text>utilization</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Satisfaction" label="Satisfaction Score">
+        <inputExpression id="InputExpression_Satisfaction" typeRef="number">
+          <text>satisfaction</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Growth" label="Usage Growth %">
+        <inputExpression id="InputExpression_Growth" typeRef="number">
+          <text>growth</text>
+        </inputExpression>
+      </input>
+      <output id="Output_ExpansionScore" label="Expansion Score" name="expansionScore" typeRef="number" />
+      <output id="Output_OpportunityType" label="Opportunity Type" name="opportunityType" typeRef="string">
+        <outputValues id="UnaryTests_OpportunityType">
+          <text>"UPSELL","CROSS_SELL","UPGRADE","RENEWAL","RETENTION","NONE"</text>
+        </outputValues>
+      </output>
+      <output id="Output_RecommendedAction" label="Recommended Action" name="recommendedAction" typeRef="string" />
+
+      <!-- Rule 1: Hot Expansion - High Utilization + High Growth + High Satisfaction -->
+      <rule id="DecisionRule_1">
+        <inputEntry id="UnaryTests_ContractAge_1">
+          <text>&gt;= 6</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_1">
+          <text>&gt;= 85</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_1">
+          <text>&gt;= 8.5</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_1">
+          <text>&gt;= 30</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_1">
+          <text>95</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_1">
+          <text>"UPSELL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_1">
+          <text>"Immediate outreach - Propose enterprise tier upgrade with additional features"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 2: Strong Upsell - High Utilization + Good Growth -->
+      <rule id="DecisionRule_2">
+        <inputEntry id="UnaryTests_ContractAge_2">
+          <text>&gt;= 6</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_2">
+          <text>&gt;= 80</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_2">
+          <text>&gt;= 7.5</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_2">
+          <text>&gt;= 20</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_2">
+          <text>88</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_2">
+          <text>"UPSELL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_2">
+          <text>"Contact within 7 days - Present capacity increase options"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 3: Cross-Sell Opportunity - High Satisfaction + Medium Utilization -->
+      <rule id="DecisionRule_3">
+        <inputEntry id="UnaryTests_ContractAge_3">
+          <text>&gt;= 9</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_3">
+          <text>[60..79]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_3">
+          <text>&gt;= 8.0</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_3">
+          <text>&gt;= 15</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_3">
+          <text>82</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_3">
+          <text>"CROSS_SELL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_3">
+          <text>"Schedule demo of complementary products"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 4: Upgrade Path - Mature Contract + High Utilization -->
+      <rule id="DecisionRule_4">
+        <inputEntry id="UnaryTests_ContractAge_4">
+          <text>&gt;= 12</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_4">
+          <text>&gt;= 75</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_4">
+          <text>&gt;= 7.0</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_4">
+          <text>&gt;= 10</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_4">
+          <text>78</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_4">
+          <text>"UPGRADE"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_4">
+          <text>"Present next-tier package with advanced features"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 5: Early Renewal - Near Term End + High Satisfaction -->
+      <rule id="DecisionRule_5">
+        <inputEntry id="UnaryTests_ContractAge_5">
+          <text>&gt;= 18</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_5">
+          <text>&gt;= 60</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_5">
+          <text>&gt;= 8.5</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_5">
+          <text>&gt;= 5</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_5">
+          <text>75</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_5">
+          <text>"RENEWAL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_5">
+          <text>"Initiate early renewal discussion with incentives"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 6: Moderate Upsell - Good Metrics Across Board -->
+      <rule id="DecisionRule_6">
+        <inputEntry id="UnaryTests_ContractAge_6">
+          <text>&gt;= 6</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_6">
+          <text>[70..84]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_6">
+          <text>[7.5..8.4]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_6">
+          <text>[15..29]</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_6">
+          <text>70</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_6">
+          <text>"UPSELL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_6">
+          <text>"Schedule quarterly business review with expansion discussion"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 7: Cross-Sell Mature Customer -->
+      <rule id="DecisionRule_7">
+        <inputEntry id="UnaryTests_ContractAge_7">
+          <text>&gt;= 12</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_7">
+          <text>[50..69]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_7">
+          <text>&gt;= 7.5</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_7">
+          <text>&gt;= 10</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_7">
+          <text>65</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_7">
+          <text>"CROSS_SELL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_7">
+          <text>"Introduce new product modules via email campaign"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 8: Standard Renewal Path -->
+      <rule id="DecisionRule_8">
+        <inputEntry id="UnaryTests_ContractAge_8">
+          <text>&gt;= 20</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_8">
+          <text>&gt;= 50</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_8">
+          <text>&gt;= 7.0</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_8">
+          <text>&gt;= 0</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_8">
+          <text>60</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_8">
+          <text>"RENEWAL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_8">
+          <text>"Begin standard renewal process 90 days before expiry"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 9: Upgrade Suggestion - Low Utilization but High Growth -->
+      <rule id="DecisionRule_9">
+        <inputEntry id="UnaryTests_ContractAge_9">
+          <text>&gt;= 6</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_9">
+          <text>[40..59]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_9">
+          <text>&gt;= 7.0</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_9">
+          <text>&gt;= 25</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_9">
+          <text>58</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_9">
+          <text>"UPGRADE"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_9">
+          <text>"Monitor growth trend - Prepare upgrade proposal for next month"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 10: Retention Focus - Low Satisfaction -->
+      <rule id="DecisionRule_10">
+        <inputEntry id="UnaryTests_ContractAge_10">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_10">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_10">
+          <text>&lt; 6.0</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_10">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_10">
+          <text>30</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_10">
+          <text>"RETENTION"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_10">
+          <text>"URGENT: Schedule executive review to address concerns"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 11: Retention Alert - Declining Growth -->
+      <rule id="DecisionRule_11">
+        <inputEntry id="UnaryTests_ContractAge_11">
+          <text>&gt;= 6</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_11">
+          <text>&lt; 40</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_11">
+          <text>[6.0..6.9]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_11">
+          <text>&lt; 0</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_11">
+          <text>35</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_11">
+          <text>"RETENTION"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_11">
+          <text>"Immediate customer success intervention - Identify usage barriers"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 12: Watch List - Moderate Risk -->
+      <rule id="DecisionRule_12">
+        <inputEntry id="UnaryTests_ContractAge_12">
+          <text>&gt;= 3</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_12">
+          <text>[30..49]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_12">
+          <text>[6.5..7.4]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_12">
+          <text>[-10..5]</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_12">
+          <text>45</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_12">
+          <text>"RETENTION"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_12">
+          <text>"Add to watch list - Increase engagement touchpoints"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 13: Standard Monitoring - Stable Account -->
+      <rule id="DecisionRule_13">
+        <inputEntry id="UnaryTests_ContractAge_13">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_13">
+          <text>[50..69]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_13">
+          <text>[7.0..7.9]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_13">
+          <text>[0..14]</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_13">
+          <text>50</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_13">
+          <text>"NONE"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_13">
+          <text>"Continue standard account management - Monitor quarterly"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 14: Default Fallback -->
+      <rule id="DecisionRule_14">
+        <inputEntry id="UnaryTests_ContractAge_14">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Utilization_14">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Satisfaction_14">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Growth_14">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_ExpansionScore_14">
+          <text>50</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_OpportunityType_14">
+          <text>"NONE"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_RecommendedAction_14">
+          <text>"Standard monitoring - Collect more data for analysis"</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape dmnElementRef="Decision_ExpansionOpportunity">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

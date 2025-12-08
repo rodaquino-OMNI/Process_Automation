@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="LeadScoringDecision" name="Lead Scoring Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.20.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.4.0">
+  <decision id="Decision_LeadScoring" name="Lead Scoring Decision">
+    <decisionTable id="DecisionTable_LeadScoring" hitPolicy="FIRST">
+      <input id="Input_LeadSource" label="Lead Source">
+        <inputExpression id="InputExpression_LeadSource" typeRef="string">
+          <text>leadSource</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_LeadSource">
+          <text>"REFERRAL","WEBSITE","TRADE_SHOW","COLD_OUTREACH","PARTNER","EXISTING_CLIENT","MARKETING_CAMPAIGN"</text>
+        </inputValues>
+      </input>
+      <input id="Input_CompanySize" label="Company Size">
+        <inputExpression id="InputExpression_CompanySize" typeRef="string">
+          <text>companySize</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_CompanySize">
+          <text>"ENTERPRISE","LARGE","MEDIUM","SMALL","STARTUP"</text>
+        </inputValues>
+      </input>
+      <input id="Input_Industry" label="Industry">
+        <inputExpression id="InputExpression_Industry" typeRef="string">
+          <text>industry</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_Industry">
+          <text>"TECHNOLOGY","FINANCE","HEALTHCARE","MANUFACTURING","RETAIL","EDUCATION","OTHER"</text>
+        </inputValues>
+      </input>
+      <input id="Input_Urgency" label="Urgency Level">
+        <inputExpression id="InputExpression_Urgency" typeRef="string">
+          <text>urgency</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_Urgency">
+          <text>"IMMEDIATE","HIGH","MEDIUM","LOW"</text>
+        </inputValues>
+      </input>
+      <input id="Input_EstimatedValue" label="Estimated Value">
+        <inputExpression id="InputExpression_EstimatedValue" typeRef="number">
+          <text>estimatedValue</text>
+        </inputExpression>
+      </input>
+      <output id="Output_LeadScore" label="Lead Score" name="leadScore" typeRef="number" />
+      <output id="Output_Priority" label="Priority" name="priority" typeRef="string">
+        <outputValues id="UnaryTests_Priority">
+          <text>"HIGH","MEDIUM","LOW"</text>
+        </outputValues>
+      </output>
+      <output id="Output_AutoAssign" label="Auto Assign" name="autoAssign" typeRef="boolean" />
+
+      <!-- Rule 1: Hot Lead - Referral + Enterprise + High Value + Immediate -->
+      <rule id="DecisionRule_1">
+        <inputEntry id="UnaryTests_LeadSource_1">
+          <text>"REFERRAL"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_1">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_1">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_1">
+          <text>"IMMEDIATE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_1">
+          <text>&gt;= 500000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_1">
+          <text>95</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_1">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_1">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 2: Very High Priority - Existing Client + Large + Tech/Finance -->
+      <rule id="DecisionRule_2">
+        <inputEntry id="UnaryTests_LeadSource_2">
+          <text>"EXISTING_CLIENT"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_2">
+          <text>"ENTERPRISE","LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_2">
+          <text>"TECHNOLOGY","FINANCE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_2">
+          <text>"IMMEDIATE","HIGH"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_2">
+          <text>&gt;= 300000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_2">
+          <text>90</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_2">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_2">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 3: High Priority - Partner Referral + Enterprise/Large -->
+      <rule id="DecisionRule_3">
+        <inputEntry id="UnaryTests_LeadSource_3">
+          <text>"PARTNER"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_3">
+          <text>"ENTERPRISE","LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_3">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_3">
+          <text>"IMMEDIATE","HIGH"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_3">
+          <text>&gt;= 200000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_3">
+          <text>85</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_3">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_3">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 4: High Priority - Trade Show + Enterprise + Healthcare -->
+      <rule id="DecisionRule_4">
+        <inputEntry id="UnaryTests_LeadSource_4">
+          <text>"TRADE_SHOW"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_4">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_4">
+          <text>"HEALTHCARE","FINANCE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_4">
+          <text>"IMMEDIATE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_4">
+          <text>&gt;= 250000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_4">
+          <text>82</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_4">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_4">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 5: High-Medium Priority - Website + Large + High Urgency -->
+      <rule id="DecisionRule_5">
+        <inputEntry id="UnaryTests_LeadSource_5">
+          <text>"WEBSITE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_5">
+          <text>"LARGE","ENTERPRISE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_5">
+          <text>"TECHNOLOGY","FINANCE","HEALTHCARE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_5">
+          <text>"HIGH"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_5">
+          <text>&gt;= 150000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_5">
+          <text>75</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_5">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_5">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 6: High-Medium Priority - Referral + Medium Company -->
+      <rule id="DecisionRule_6">
+        <inputEntry id="UnaryTests_LeadSource_6">
+          <text>"REFERRAL"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_6">
+          <text>"MEDIUM","LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_6">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_6">
+          <text>"HIGH","IMMEDIATE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_6">
+          <text>&gt;= 100000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_6">
+          <text>72</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_6">
+          <text>"HIGH"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_6">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 7: Medium Priority - Marketing Campaign + Large + Medium Urgency -->
+      <rule id="DecisionRule_7">
+        <inputEntry id="UnaryTests_LeadSource_7">
+          <text>"MARKETING_CAMPAIGN"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_7">
+          <text>"LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_7">
+          <text>"TECHNOLOGY","FINANCE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_7">
+          <text>"MEDIUM","HIGH"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_7">
+          <text>&gt;= 120000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_7">
+          <text>68</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_7">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_7">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 8: Medium Priority - Partner + Medium Company + Medium Urgency -->
+      <rule id="DecisionRule_8">
+        <inputEntry id="UnaryTests_LeadSource_8">
+          <text>"PARTNER"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_8">
+          <text>"MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_8">
+          <text>"MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_8">
+          <text>&gt;= 80000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_8">
+          <text>65</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_8">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_8">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 9: Medium Priority - Website + Medium Company -->
+      <rule id="DecisionRule_9">
+        <inputEntry id="UnaryTests_LeadSource_9">
+          <text>"WEBSITE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_9">
+          <text>"MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_9">
+          <text>"TECHNOLOGY","RETAIL","MANUFACTURING"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_9">
+          <text>"MEDIUM","HIGH"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_9">
+          <text>&gt;= 60000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_9">
+          <text>60</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_9">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_9">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 10: Medium Priority - Trade Show + Medium Company -->
+      <rule id="DecisionRule_10">
+        <inputEntry id="UnaryTests_LeadSource_10">
+          <text>"TRADE_SHOW"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_10">
+          <text>"MEDIUM","LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_10">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_10">
+          <text>"MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_10">
+          <text>&gt;= 70000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_10">
+          <text>58</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_10">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_10">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 11: Medium-Low Priority - Small Company + High Value -->
+      <rule id="DecisionRule_11">
+        <inputEntry id="UnaryTests_LeadSource_11">
+          <text>"REFERRAL","PARTNER"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_11">
+          <text>"SMALL"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_11">
+          <text>"TECHNOLOGY","FINANCE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_11">
+          <text>"HIGH","MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_11">
+          <text>&gt;= 50000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_11">
+          <text>52</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_11">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_11">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 12: Low Priority - Cold Outreach + Small/Medium -->
+      <rule id="DecisionRule_12">
+        <inputEntry id="UnaryTests_LeadSource_12">
+          <text>"COLD_OUTREACH"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_12">
+          <text>"SMALL","MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_12">
+          <text>"MEDIUM","LOW"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_12">
+          <text>&gt;= 30000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_12">
+          <text>45</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_12">
+          <text>"LOW"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_12">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 13: Low Priority - Startup + Low Urgency -->
+      <rule id="DecisionRule_13">
+        <inputEntry id="UnaryTests_LeadSource_13">
+          <text>"WEBSITE","MARKETING_CAMPAIGN"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_13">
+          <text>"STARTUP","SMALL"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_13">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_13">
+          <text>"LOW","MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_13">
+          <text>&gt;= 20000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_13">
+          <text>38</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_13">
+          <text>"LOW"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_13">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 14: Low Priority - Any Low Urgency + Low Value -->
+      <rule id="DecisionRule_14">
+        <inputEntry id="UnaryTests_LeadSource_14">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_14">
+          <text>"SMALL","STARTUP"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_14">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_14">
+          <text>"LOW"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_14">
+          <text>&lt; 30000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_14">
+          <text>25</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_14">
+          <text>"LOW"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_14">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 15: Very Low Priority - Cold Outreach + Low Value -->
+      <rule id="DecisionRule_15">
+        <inputEntry id="UnaryTests_LeadSource_15">
+          <text>"COLD_OUTREACH"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_15">
+          <text>"STARTUP","SMALL"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_15">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_15">
+          <text>"LOW"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_15">
+          <text>&lt; 20000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_15">
+          <text>15</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_15">
+          <text>"LOW"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_15">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 16: Default Fallback -->
+      <rule id="DecisionRule_16">
+        <inputEntry id="UnaryTests_LeadSource_16">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CompanySize_16">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_16">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Urgency_16">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_EstimatedValue_16">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_LeadScore_16">
+          <text>40</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Priority_16">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_AutoAssign_16">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape dmnElementRef="Decision_LeadScoring">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

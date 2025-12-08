@@ -1,0 +1,621 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/dmn" id="Decision_MEDDIC_Scoring" name="MEDDIC Qualification Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.36.0">
+  <decision id="Decision_MEDDIC_Score" name="MEDDIC Score Calculator">
+    <decisionTable id="DecisionTable_MEDDIC" hitPolicy="COLLECT" aggregation="SUM">
+      <input id="Input_Metrics" label="Metrics (M)" camunda:inputVariable="metrics">
+        <inputExpression id="InputExpression_Metrics" typeRef="integer">
+          <text>metrics.score</text>
+        </inputExpression>
+      </input>
+      <input id="Input_EconomicBuyer" label="Economic Buyer (E)" camunda:inputVariable="economicBuyer">
+        <inputExpression id="InputExpression_EB" typeRef="integer">
+          <text>economicBuyer.score</text>
+        </inputExpression>
+      </input>
+      <input id="Input_DecisionCriteria" label="Decision Criteria (D)" camunda:inputVariable="decisionCriteria">
+        <inputExpression id="InputExpression_DC" typeRef="integer">
+          <text>decisionCriteria.score</text>
+        </inputExpression>
+      </input>
+      <input id="Input_DecisionProcess" label="Decision Process (D)" camunda:inputVariable="decisionProcess">
+        <inputExpression id="InputExpression_DP" typeRef="integer">
+          <text>decisionProcess.score</text>
+        </inputExpression>
+      </input>
+      <input id="Input_IdentifyPain" label="Identify Pain (I)" camunda:inputVariable="identifyPain">
+        <inputExpression id="InputExpression_IP" typeRef="integer">
+          <text>identifyPain.score</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Champion" label="Champion (C)" camunda:inputVariable="champion">
+        <inputExpression id="InputExpression_CH" typeRef="integer">
+          <text>champion.score</text>
+        </inputExpression>
+      </input>
+
+      <!-- METRICS Scoring Rules -->
+      <rule id="Rule_Metrics_Excellent">
+        <inputEntry id="InputEntry_M_E">
+          <text>[9..10]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_M_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_M_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_M_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_M_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_M_E">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_M_E">
+          <text>2.0</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_Metrics_Good">
+        <inputEntry id="InputEntry_M_G">
+          <text>[7..8]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_M_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_M_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_M_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_M_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_M_G">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_M_G">
+          <text>1.5</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_Metrics_Fair">
+        <inputEntry id="InputEntry_M_F">
+          <text>[5..6]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_M_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_M_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_M_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_M_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_M_F">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_M_F">
+          <text>1.0</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_Metrics_Poor">
+        <inputEntry id="InputEntry_M_P">
+          <text>[1..4]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_M_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_M_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_M_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_M_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_M_P">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_M_P">
+          <text>0.5</text>
+        </outputEntry>
+      </rule>
+
+      <!-- ECONOMIC BUYER Scoring Rules -->
+      <rule id="Rule_EB_Excellent">
+        <inputEntry id="InputEntry_M_EB_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_E">
+          <text>[9..10]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_EB_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_EB_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_EB_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_EB_E">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_EB_E">
+          <text>2.0</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_EB_Good">
+        <inputEntry id="InputEntry_M_EB_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_G">
+          <text>[7..8]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_EB_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_EB_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_EB_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_EB_G">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_EB_G">
+          <text>1.5</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_EB_Fair">
+        <inputEntry id="InputEntry_M_EB_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_F">
+          <text>[5..6]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_EB_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_EB_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_EB_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_EB_F">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_EB_F">
+          <text>1.0</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_EB_Poor">
+        <inputEntry id="InputEntry_M_EB_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_P">
+          <text>[1..4]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_EB_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_EB_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_EB_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_EB_P">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_EB_P">
+          <text>0.5</text>
+        </outputEntry>
+      </rule>
+
+      <!-- DECISION CRITERIA Scoring Rules -->
+      <rule id="Rule_DC_Excellent">
+        <inputEntry id="InputEntry_M_DC_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_DC_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_E">
+          <text>[9..10]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_DC_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_DC_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_DC_E">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_DC_E">
+          <text>1.5</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_DC_Good">
+        <inputEntry id="InputEntry_M_DC_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_DC_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_G">
+          <text>[7..8]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_DC_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_DC_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_DC_G">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_DC_G">
+          <text>1.0</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_DC_Fair">
+        <inputEntry id="InputEntry_M_DC_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_DC_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_F">
+          <text>[5..6]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_DC_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_DC_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_DC_F">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_DC_F">
+          <text>0.7</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_DC_Poor">
+        <inputEntry id="InputEntry_M_DC_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_DC_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_P">
+          <text>[1..4]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_DC_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_DC_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_DC_P">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_DC_P">
+          <text>0.3</text>
+        </outputEntry>
+      </rule>
+
+      <!-- DECISION PROCESS Scoring Rules -->
+      <rule id="Rule_DP_Excellent">
+        <inputEntry id="InputEntry_M_DP_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_DP_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_DP_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_E">
+          <text>[9..10]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_DP_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_DP_E">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_DP_E">
+          <text>1.5</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_DP_Good">
+        <inputEntry id="InputEntry_M_DP_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_DP_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_DP_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_G">
+          <text>[7..8]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_DP_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_DP_G">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_DP_G">
+          <text>1.0</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_DP_Fair">
+        <inputEntry id="InputEntry_M_DP_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_DP_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_DP_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_F">
+          <text>[5..6]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_DP_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_DP_F">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_DP_F">
+          <text>0.7</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_DP_Poor">
+        <inputEntry id="InputEntry_M_DP_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_DP_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_DP_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_P">
+          <text>[1..4]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_DP_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_DP_P">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_DP_P">
+          <text>0.3</text>
+        </outputEntry>
+      </rule>
+
+      <!-- IDENTIFY PAIN Scoring Rules -->
+      <rule id="Rule_IP_Excellent">
+        <inputEntry id="InputEntry_M_IP_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_IP_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_IP_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_IP_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_E">
+          <text>[9..10]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_IP_E">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_IP_E">
+          <text>1.5</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_IP_Good">
+        <inputEntry id="InputEntry_M_IP_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_IP_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_IP_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_IP_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_G">
+          <text>[7..8]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_IP_G">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_IP_G">
+          <text>1.0</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_IP_Fair">
+        <inputEntry id="InputEntry_M_IP_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_IP_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_IP_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_IP_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_F">
+          <text>[5..6]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_IP_F">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_IP_F">
+          <text>0.7</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_IP_Poor">
+        <inputEntry id="InputEntry_M_IP_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_IP_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_IP_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_IP_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_P">
+          <text>[1..4]</text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_IP_P">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_IP_P">
+          <text>0.3</text>
+        </outputEntry>
+      </rule>
+
+      <!-- CHAMPION Scoring Rules -->
+      <rule id="Rule_CH_Excellent">
+        <inputEntry id="InputEntry_M_CH_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_CH_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_CH_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_CH_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_CH_E">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_E">
+          <text>[9..10]</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_CH_E">
+          <text>1.5</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_CH_Good">
+        <inputEntry id="InputEntry_M_CH_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_CH_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_CH_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_CH_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_CH_G">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_G">
+          <text>[7..8]</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_CH_G">
+          <text>1.0</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_CH_Fair">
+        <inputEntry id="InputEntry_M_CH_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_CH_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_CH_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_CH_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_CH_F">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_F">
+          <text>[5..6]</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_CH_F">
+          <text>0.7</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="Rule_CH_Poor">
+        <inputEntry id="InputEntry_M_CH_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_EB_CH_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DC_CH_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_DP_CH_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_IP_CH_P">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="InputEntry_CH_P">
+          <text>[1..4]</text>
+        </inputEntry>
+        <outputEntry id="OutputEntry_CH_P">
+          <text>0.3</text>
+        </outputEntry>
+      </rule>
+
+      <output id="Output_Score" label="MEDDIC Score" name="scoreMEDDIC" typeRef="double" />
+    </decisionTable>
+  </decision>
+</definitions>

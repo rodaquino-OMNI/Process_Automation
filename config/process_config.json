@@ -1,0 +1,173 @@
+{
+  "processDefinition": {
+    "id": "AUSTA_B2B_Expansion_Sales_Machine",
+    "name": "AUSTA B2B Expansion and Sales Machine",
+    "version": "1.0.0",
+    "description": "End-to-end B2B sales and implementation process for AUSTA health insurance operator"
+  },
+  "processVariables": {
+    "lead": {
+      "leadId": {"type": "string", "required": true},
+      "companyName": {"type": "string", "required": true},
+      "companySize": {"type": "long", "required": true},
+      "cnpj": {"type": "string", "required": true},
+      "contactName": {"type": "string", "required": true},
+      "contactEmail": {"type": "string", "required": true},
+      "contactPhone": {"type": "string", "required": true},
+      "leadSource": {"type": "string", "required": true},
+      "leadQualified": {"type": "boolean", "default": false},
+      "fitScore": {"type": "long", "default": 0}
+    },
+    "opportunity": {
+      "opportunityId": {"type": "string", "required": false},
+      "opportunityValue": {"type": "double", "default": 0.0},
+      "dealPriority": {"type": "string", "default": "medium"},
+      "stage": {"type": "string", "default": "lead_qualification"}
+    },
+    "proposal": {
+      "proposalId": {"type": "string", "required": false},
+      "proposalDocumentUrl": {"type": "string", "required": false},
+      "proposalStatus": {"type": "string", "default": "draft"},
+      "planType": {"type": "string", "required": false},
+      "coparticipation": {"type": "boolean", "default": false},
+      "networkType": {"type": "string", "required": false},
+      "discount": {"type": "long", "default": 0}
+    },
+    "contract": {
+      "contractId": {"type": "string", "required": false},
+      "contractUrl": {"type": "string", "required": false},
+      "signedContractUrl": {"type": "string", "required": false},
+      "contractSigned": {"type": "boolean", "default": false},
+      "startDate": {"type": "date", "required": false},
+      "contractDuration": {"type": "long", "default": 12}
+    },
+    "implementation": {
+      "projectId": {"type": "string", "required": false},
+      "projectStatus": {"type": "string", "default": "not_started"},
+      "kickoffDate": {"type": "date", "required": false},
+      "goLiveDate": {"type": "date", "required": false}
+    },
+    "monitoring": {
+      "accountHealth": {"type": "string", "default": "unknown"},
+      "nps": {"type": "long", "default": 0},
+      "churnRisk": {"type": "string", "default": "low"},
+      "expansionScore": {"type": "long", "default": 0}
+    }
+  },
+  "roleAssignments": {
+    "salesTeam": "sales-team",
+    "salesManager": "sales-management",
+    "commercialDirector": "commercial-directors",
+    "ceo": "executive-board",
+    "legalCounsel": "legal-department",
+    "projectManager": "project-management",
+    "implementationManager": "implementation-team",
+    "customerSuccess": "customer-success",
+    "accountManager": "account-management",
+    "digitalCoach": "digital-enablement"
+  },
+  "integrations": {
+    "crm": {
+      "type": "external-service",
+      "topic": "crm-update",
+      "systems": ["Salesforce", "HubSpot"]
+    },
+    "erp": {
+      "type": "external-service",
+      "topic": "erp-integration",
+      "systems": ["TOTVS", "SAP"]
+    },
+    "ans": {
+      "type": "external-service",
+      "topic": "ans-registration",
+      "endpoint": "https://ans.gov.br/api"
+    },
+    "digitalSignature": {
+      "type": "external-service",
+      "topic": "send-for-signature",
+      "provider": "DocuSign"
+    },
+    "emailNotification": {
+      "type": "external-service",
+      "topic": "notification",
+      "provider": "SendGrid"
+    }
+  },
+  "businessRules": {
+    "decision_lead_fit_score": {
+      "file": "dmn/lead_fit_score.dmn",
+      "description": "Calculate lead fit score based on company profile"
+    },
+    "decision_approval_level": {
+      "file": "dmn/approval_level.dmn",
+      "description": "Determine approval level based on deal value"
+    },
+    "decision_pricing_calculation": {
+      "file": "dmn/pricing_calculation.dmn",
+      "description": "Calculate pricing based on demographics and coverage"
+    },
+    "decision_kpi_analysis": {
+      "file": "dmn/kpi_analysis.dmn",
+      "description": "Analyze account KPIs for health assessment"
+    },
+    "decision_expansion_opportunities": {
+      "file": "dmn/expansion_opportunities.dmn",
+      "description": "Identify expansion opportunities based on usage patterns"
+    }
+  },
+  "kpis": {
+    "sales": {
+      "leadConversionRate": {"target": 0.30, "unit": "percentage"},
+      "avgSalesCycleTime": {"target": 90, "unit": "days"},
+      "dealCloseRate": {"target": 0.65, "unit": "percentage"},
+      "avgDealValue": {"target": 500000, "unit": "BRL"}
+    },
+    "implementation": {
+      "onTimeDelivery": {"target": 0.90, "unit": "percentage"},
+      "avgImplementationTime": {"target": 60, "unit": "days"},
+      "clientSatisfaction": {"target": 8.5, "unit": "score"}
+    },
+    "customerSuccess": {
+      "nps": {"target": 70, "unit": "score"},
+      "churnRate": {"target": 0.05, "unit": "percentage"},
+      "expansionRate": {"target": 0.25, "unit": "percentage"},
+      "ltv": {"target": 3000000, "unit": "BRL"}
+    }
+  },
+  "sla": {
+    "leadQualification": {"time": 24, "unit": "hours"},
+    "proposalGeneration": {"time": 5, "unit": "days"},
+    "contractGeneration": {"time": 3, "unit": "days"},
+    "implementationKickoff": {"time": 15, "unit": "days"},
+    "goLive": {"time": 60, "unit": "days"}
+  },
+  "notifications": {
+    "leadQualified": {
+      "recipients": ["salesManager", "accountExecutive"],
+      "template": "lead_qualified_notification"
+    },
+    "proposalSent": {
+      "recipients": ["client", "accountExecutive", "salesManager"],
+      "template": "proposal_sent_notification"
+    },
+    "contractSigned": {
+      "recipients": ["salesTeam", "implementationTeam", "finance"],
+      "template": "contract_signed_notification"
+    },
+    "implementationComplete": {
+      "recipients": ["client", "projectManager", "customerSuccess"],
+      "template": "implementation_complete_notification"
+    }
+  },
+  "errorHandling": {
+    "retryPolicy": {
+      "maxAttempts": 3,
+      "backoffMultiplier": 2,
+      "initialInterval": 5000
+    },
+    "escalation": {
+      "timeout": {"recipient": "salesManager", "after": "P1D"},
+      "failure": {"recipient": "systemAdmin", "immediate": true}
+    }
+  }
+}

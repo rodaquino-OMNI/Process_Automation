@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   id="Definitions_PostLaunchMon_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_PostLaunchMon_V3" name="Monitoramento Pós-Lançamento V3" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_PostLaunchStart_V3" name="Iniciar Monitoramento">
+      <bpmn:outgoing>Flow_Start_CollectBaseline</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- Collect Baseline KPIs -->
+    <bpmn:serviceTask id="Task_CollectBaseline" name="Coletar KPIs Baseline" camunda:type="external" camunda:topic="collect-baseline-kpis">
+      <bpmn:incoming>Flow_Start_CollectBaseline</bpmn:incoming>
+      <bpmn:outgoing>Flow_Baseline_Day7</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- V3 Enhancement: Non-Interrupting Timer P7D (Day 7) -->
+    <bpmn:boundaryEvent id="Event_Day7Timer" name="Day 7 Check" cancelActivity="false" attachedToRef="Task_CollectBaseline">
+      <bpmn:outgoing>Flow_Day7_Analyze</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P7D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <bpmn:serviceTask id="Task_AnalyzeDay7" name="Análise Dia 7" camunda:type="external" camunda:topic="analyze-day7-kpis">
+      <bpmn:incoming>Flow_Day7_Analyze</bpmn:incoming>
+      <bpmn:outgoing>Flow_Day7_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="Event_Day7End" name="Análise Dia 7 Completa">
+      <bpmn:incoming>Flow_Day7_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- V3 Enhancement: Non-Interrupting Timer P23D (Day 23) -->
+    <bpmn:intermediateCatchEvent id="Event_Day23Timer" name="Day 23 Check">
+      <bpmn:incoming>Flow_Baseline_Day7</bpmn:incoming>
+      <bpmn:outgoing>Flow_Day23_Analyze</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P23D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+
+    <!-- KPI Analysis Business Rule Task -->
+    <bpmn:businessRuleTask id="Task_AnalyzeKPIs_Day23" name="Análise KPIs Dia 23 (DMN)"
+                           camunda:resultVariable="kpiAnalysisDay23"
+                           camunda:decisionRef="decision_kpi_analysis"
+                           camunda:mapDecisionResult="singleResult">
+      <bpmn:incoming>Flow_Day23_Analyze</bpmn:incoming>
+      <bpmn:outgoing>Flow_Day23_Day60</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- V3 Enhancement: Non-Interrupting Timer P60D (Day 60) -->
+    <bpmn:intermediateCatchEvent id="Event_Day60Timer" name="Day 60 Check">
+      <bpmn:incoming>Flow_Day23_Day60</bpmn:incoming>
+      <bpmn:outgoing>Flow_Day60_Analyze</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P60D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:businessRuleTask id="Task_AnalyzeKPIs_Day60" name="Análise KPIs Dia 60 (DMN)"
+                           camunda:resultVariable="kpiAnalysisDay60"
+                           camunda:decisionRef="decision_kpi_analysis"
+                           camunda:mapDecisionResult="singleResult">
+      <bpmn:incoming>Flow_Day60_Analyze</bpmn:incoming>
+      <bpmn:outgoing>Flow_Day60_Report</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- Generate Final Report -->
+    <bpmn:serviceTask id="Task_GenerateFinalReport" name="Gerar Relatório Final" camunda:type="external" camunda:topic="generate-monitoring-report">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="kpiBaseline">${kpiBaseline}</camunda:inputParameter>
+          <camunda:inputParameter name="kpiDay23">${kpiAnalysisDay23}</camunda:inputParameter>
+          <camunda:inputParameter name="kpiDay60">${kpiAnalysisDay60}</camunda:inputParameter>
+          <camunda:outputParameter name="finalReport">${finalReport}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Day60_Report</bpmn:incoming>
+      <bpmn:outgoing>Flow_Report_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="Event_PostLaunchEnd_V3" name="Monitoramento Concluído">
+      <bpmn:incoming>Flow_Report_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_CollectBaseline" sourceRef="Event_PostLaunchStart_V3" targetRef="Task_CollectBaseline" />
+    <bpmn:sequenceFlow id="Flow_Day7_Analyze" sourceRef="Event_Day7Timer" targetRef="Task_AnalyzeDay7" />
+    <bpmn:sequenceFlow id="Flow_Day7_End" sourceRef="Task_AnalyzeDay7" targetRef="Event_Day7End" />
+    <bpmn:sequenceFlow id="Flow_Baseline_Day7" sourceRef="Task_CollectBaseline" targetRef="Event_Day23Timer" />
+    <bpmn:sequenceFlow id="Flow_Day23_Analyze" sourceRef="Event_Day23Timer" targetRef="Task_AnalyzeKPIs_Day23" />
+    <bpmn:sequenceFlow id="Flow_Day23_Day60" sourceRef="Task_AnalyzeKPIs_Day23" targetRef="Event_Day60Timer" />
+    <bpmn:sequenceFlow id="Flow_Day60_Analyze" sourceRef="Event_Day60Timer" targetRef="Task_AnalyzeKPIs_Day60" />
+    <bpmn:sequenceFlow id="Flow_Day60_Report" sourceRef="Task_AnalyzeKPIs_Day60" targetRef="Task_GenerateFinalReport" />
+    <bpmn:sequenceFlow id="Flow_Report_End" sourceRef="Task_GenerateFinalReport" targetRef="Event_PostLaunchEnd_V3" />
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_PostLaunchMon_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_PostLaunchMon_V3" bpmnElement="Process_PostLaunchMon_V3">
+
+      <bpmndi:BPMNShape id="Event_PostLaunchStart_V3_di" bpmnElement="Event_PostLaunchStart_V3">
+        <dc:Bounds x="180" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_CollectBaseline_di" bpmnElement="Task_CollectBaseline">
+        <dc:Bounds x="270" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_Day7Timer_di" bpmnElement="Event_Day7Timer">
+        <dc:Bounds x="352" y="240" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_AnalyzeDay7_di" bpmnElement="Task_AnalyzeDay7">
+        <dc:Bounds x="320" y="300" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_Day7End_di" bpmnElement="Event_Day7End">
+        <dc:Bounds x="472" y="322" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_Day23Timer_di" bpmnElement="Event_Day23Timer">
+        <dc:Bounds x="422" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_AnalyzeKPIs_Day23_di" bpmnElement="Task_AnalyzeKPIs_Day23">
+        <dc:Bounds x="510" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_Day60Timer_di" bpmnElement="Event_Day60Timer">
+        <dc:Bounds x="662" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_AnalyzeKPIs_Day60_di" bpmnElement="Task_AnalyzeKPIs_Day60">
+        <dc:Bounds x="750" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_GenerateFinalReport_di" bpmnElement="Task_GenerateFinalReport">
+        <dc:Bounds x="900" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_PostLaunchEnd_V3_di" bpmnElement="Event_PostLaunchEnd_V3">
+        <dc:Bounds x="1052" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_CollectBaseline_di" bpmnElement="Flow_Start_CollectBaseline">
+        <di:waypoint x="216" y="218" />
+        <di:waypoint x="270" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Day7_Analyze_di" bpmnElement="Flow_Day7_Analyze">
+        <di:waypoint x="370" y="276" />
+        <di:waypoint x="370" y="300" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Day7_End_di" bpmnElement="Flow_Day7_End">
+        <di:waypoint x="420" y="340" />
+        <di:waypoint x="472" y="340" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Baseline_Day7_di" bpmnElement="Flow_Baseline_Day7">
+        <di:waypoint x="370" y="218" />
+        <di:waypoint x="422" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Day23_Analyze_di" bpmnElement="Flow_Day23_Analyze">
+        <di:waypoint x="458" y="218" />
+        <di:waypoint x="510" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Day23_Day60_di" bpmnElement="Flow_Day23_Day60">
+        <di:waypoint x="610" y="218" />
+        <di:waypoint x="662" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Day60_Analyze_di" bpmnElement="Flow_Day60_Analyze">
+        <di:waypoint x="698" y="218" />
+        <di:waypoint x="750" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Day60_Report_di" bpmnElement="Flow_Day60_Report">
+        <di:waypoint x="850" y="218" />
+        <di:waypoint x="900" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Report_End_di" bpmnElement="Flow_Report_End">
+        <di:waypoint x="1000" y="218" />
+        <di:waypoint x="1052" y="218" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

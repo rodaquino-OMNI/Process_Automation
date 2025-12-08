@@ -1,0 +1,607 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="PricingDecision" name="Pricing Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.20.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.4.0">
+  <decision id="Decision_Pricing" name="Pricing Decision">
+    <decisionTable id="DecisionTable_Pricing" hitPolicy="FIRST">
+      <input id="Input_CompanySize" label="Company Size">
+        <inputExpression id="InputExpression_CompanySize" typeRef="string">
+          <text>companySize</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_CompanySize">
+          <text>"ENTERPRISE","LARGE","MEDIUM","SMALL","STARTUP"</text>
+        </inputValues>
+      </input>
+      <input id="Input_Industry" label="Industry">
+        <inputExpression id="InputExpression_Industry" typeRef="string">
+          <text>industry</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_Industry">
+          <text>"TECHNOLOGY","FINANCE","HEALTHCARE","MANUFACTURING","RETAIL","EDUCATION","OTHER"</text>
+        </inputValues>
+      </input>
+      <input id="Input_ContractTerm" label="Contract Term (months)">
+        <inputExpression id="InputExpression_ContractTerm" typeRef="number">
+          <text>contractTerm</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Features" label="Feature Package">
+        <inputExpression id="InputExpression_Features" typeRef="string">
+          <text>features</text>
+        </inputExpression>
+        <inputValues id="UnaryTests_Features">
+          <text>"BASIC","STANDARD","PROFESSIONAL","ENTERPRISE","CUSTOM"</text>
+        </inputValues>
+      </input>
+      <output id="Output_BasePrice" label="Base Price" name="basePrice" typeRef="number" />
+      <output id="Output_Discount" label="Discount %" name="discount" typeRef="number" />
+      <output id="Output_FinalPrice" label="Final Price" name="finalPrice" typeRef="number" />
+      <output id="Output_ApprovalRequired" label="Approval Required" name="approvalRequired" typeRef="boolean" />
+
+      <!-- Rule 1: Enterprise + Custom + Long Term = Premium Pricing -->
+      <rule id="DecisionRule_1">
+        <inputEntry id="UnaryTests_CompanySize_1">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_1">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_1">
+          <text>&gt;= 36</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_1">
+          <text>"CUSTOM","ENTERPRISE"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_1">
+          <text>500000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_1">
+          <text>15</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_1">
+          <text>425000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_1">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 2: Enterprise + Finance/Healthcare + Enterprise Package -->
+      <rule id="DecisionRule_2">
+        <inputEntry id="UnaryTests_CompanySize_2">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_2">
+          <text>"FINANCE","HEALTHCARE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_2">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_2">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_2">
+          <text>400000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_2">
+          <text>12</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_2">
+          <text>352000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_2">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 3: Enterprise + Tech + Professional -->
+      <rule id="DecisionRule_3">
+        <inputEntry id="UnaryTests_CompanySize_3">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_3">
+          <text>"TECHNOLOGY"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_3">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_3">
+          <text>"PROFESSIONAL","ENTERPRISE"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_3">
+          <text>350000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_3">
+          <text>10</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_3">
+          <text>315000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_3">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 4: Enterprise + Short Term -->
+      <rule id="DecisionRule_4">
+        <inputEntry id="UnaryTests_CompanySize_4">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_4">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_4">
+          <text>[12..23]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_4">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_4">
+          <text>380000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_4">
+          <text>5</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_4">
+          <text>361000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_4">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 5: Large + Custom + Long Term -->
+      <rule id="DecisionRule_5">
+        <inputEntry id="UnaryTests_CompanySize_5">
+          <text>"LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_5">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_5">
+          <text>&gt;= 36</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_5">
+          <text>"CUSTOM","ENTERPRISE"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_5">
+          <text>300000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_5">
+          <text>15</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_5">
+          <text>255000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_5">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 6: Large + Finance/Healthcare + Enterprise -->
+      <rule id="DecisionRule_6">
+        <inputEntry id="UnaryTests_CompanySize_6">
+          <text>"LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_6">
+          <text>"FINANCE","HEALTHCARE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_6">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_6">
+          <text>"ENTERPRISE","PROFESSIONAL"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_6">
+          <text>250000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_6">
+          <text>12</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_6">
+          <text>220000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_6">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 7: Large + Technology + Professional -->
+      <rule id="DecisionRule_7">
+        <inputEntry id="UnaryTests_CompanySize_7">
+          <text>"LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_7">
+          <text>"TECHNOLOGY"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_7">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_7">
+          <text>"PROFESSIONAL"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_7">
+          <text>200000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_7">
+          <text>10</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_7">
+          <text>180000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_7">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 8: Large + Standard Package -->
+      <rule id="DecisionRule_8">
+        <inputEntry id="UnaryTests_CompanySize_8">
+          <text>"LARGE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_8">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_8">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_8">
+          <text>"STANDARD"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_8">
+          <text>150000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_8">
+          <text>8</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_8">
+          <text>138000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_8">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 9: Medium + Enterprise Package + Long Term -->
+      <rule id="DecisionRule_9">
+        <inputEntry id="UnaryTests_CompanySize_9">
+          <text>"MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_9">
+          <text>"FINANCE","HEALTHCARE","TECHNOLOGY"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_9">
+          <text>&gt;= 36</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_9">
+          <text>"ENTERPRISE"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_9">
+          <text>180000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_9">
+          <text>15</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_9">
+          <text>153000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_9">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 10: Medium + Professional + 2 Year -->
+      <rule id="DecisionRule_10">
+        <inputEntry id="UnaryTests_CompanySize_10">
+          <text>"MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_10">
+          <text>"TECHNOLOGY","FINANCE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_10">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_10">
+          <text>"PROFESSIONAL"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_10">
+          <text>120000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_10">
+          <text>12</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_10">
+          <text>105600</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_10">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 11: Medium + Standard + Long Term -->
+      <rule id="DecisionRule_11">
+        <inputEntry id="UnaryTests_CompanySize_11">
+          <text>"MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_11">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_11">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_11">
+          <text>"STANDARD"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_11">
+          <text>90000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_11">
+          <text>10</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_11">
+          <text>81000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_11">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 12: Medium + Standard + Short Term -->
+      <rule id="DecisionRule_12">
+        <inputEntry id="UnaryTests_CompanySize_12">
+          <text>"MEDIUM"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_12">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_12">
+          <text>[12..23]</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_12">
+          <text>"STANDARD","PROFESSIONAL"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_12">
+          <text>100000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_12">
+          <text>5</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_12">
+          <text>95000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_12">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 13: Small + Professional + Long Term -->
+      <rule id="DecisionRule_13">
+        <inputEntry id="UnaryTests_CompanySize_13">
+          <text>"SMALL"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_13">
+          <text>"TECHNOLOGY","FINANCE"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_13">
+          <text>&gt;= 36</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_13">
+          <text>"PROFESSIONAL"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_13">
+          <text>80000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_13">
+          <text>15</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_13">
+          <text>68000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_13">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 14: Small + Standard + 2 Year -->
+      <rule id="DecisionRule_14">
+        <inputEntry id="UnaryTests_CompanySize_14">
+          <text>"SMALL"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_14">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_14">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_14">
+          <text>"STANDARD"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_14">
+          <text>60000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_14">
+          <text>12</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_14">
+          <text>52800</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_14">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 15: Small + Basic Package -->
+      <rule id="DecisionRule_15">
+        <inputEntry id="UnaryTests_CompanySize_15">
+          <text>"SMALL"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_15">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_15">
+          <text>&gt;= 12</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_15">
+          <text>"BASIC"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_15">
+          <text>40000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_15">
+          <text>8</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_15">
+          <text>36800</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_15">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 16: Startup + Professional + Long Term -->
+      <rule id="DecisionRule_16">
+        <inputEntry id="UnaryTests_CompanySize_16">
+          <text>"STARTUP"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_16">
+          <text>"TECHNOLOGY"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_16">
+          <text>&gt;= 36</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_16">
+          <text>"PROFESSIONAL"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_16">
+          <text>50000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_16">
+          <text>20</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_16">
+          <text>40000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_16">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 17: Startup + Standard + 2 Year -->
+      <rule id="DecisionRule_17">
+        <inputEntry id="UnaryTests_CompanySize_17">
+          <text>"STARTUP"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_17">
+          <text>"TECHNOLOGY"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_17">
+          <text>&gt;= 24</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_17">
+          <text>"STANDARD"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_17">
+          <text>35000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_17">
+          <text>15</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_17">
+          <text>29750</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_17">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 18: Startup + Basic Package -->
+      <rule id="DecisionRule_18">
+        <inputEntry id="UnaryTests_CompanySize_18">
+          <text>"STARTUP"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_18">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_18">
+          <text>&gt;= 12</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_18">
+          <text>"BASIC"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_18">
+          <text>25000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_18">
+          <text>10</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_18">
+          <text>22500</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_18">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 19: Any + Custom Package -->
+      <rule id="DecisionRule_19">
+        <inputEntry id="UnaryTests_CompanySize_19">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_19">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_19">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_19">
+          <text>"CUSTOM"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_19">
+          <text>0</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_19">
+          <text>0</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_19">
+          <text>0</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_19">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Rule 20: Default Fallback -->
+      <rule id="DecisionRule_20">
+        <inputEntry id="UnaryTests_CompanySize_20">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Industry_20">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_ContractTerm_20">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Features_20">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_BasePrice_20">
+          <text>50000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Discount_20">
+          <text>0</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_FinalPrice_20">
+          <text>50000</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_ApprovalRequired_20">
+          <text>false</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram>
+      <dmndi:DMNShape dmnElementRef="Decision_Pricing">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

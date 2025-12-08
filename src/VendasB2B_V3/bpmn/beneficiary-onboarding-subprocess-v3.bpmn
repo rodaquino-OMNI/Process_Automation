@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   id="Definitions_Beneficiary_Onboarding_V3"
+                   targetNamespace="http://austa.com.br/bpmn/v3"
+                   exporter="Camunda Modeler"
+                   exporterVersion="5.20.0">
+
+  <bpmn:process id="Process_Beneficiary_Onboarding_V3" name="AUSTA V3 - Beneficiary Onboarding Subprocess" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:documentation>
+      AUSTA V3 Sales Completion - Beneficiary Onboarding
+      Features: 7-task sequence (V1 pattern), ANS compliance with 72-hour deadline, data validation
+      Error Boundaries: Validation failure, ANS rejection, card generation error
+      Compensation: Rollback onboarding, notify client
+    </bpmn:documentation>
+
+    <!-- START EVENT -->
+    <bpmn:startEvent id="Event_OnboardingStart_V3" name="Start Beneficiary Onboarding">
+      <bpmn:outgoing>Flow_ToCollect</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- TASK 1: Collect Beneficiary Data -->
+    <bpmn:serviceTask id="Task_CollectData_V3" name="Collect Beneficiary Data"
+                      camunda:type="external" camunda:topic="collect-beneficiary-data">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="clientId">${clientId}</camunda:inputParameter>
+          <camunda:inputParameter name="contractId">${contractId}</camunda:inputParameter>
+          <camunda:outputParameter name="beneficiariesData">${beneficiariesData}</camunda:outputParameter>
+          <camunda:outputParameter name="totalBeneficiaries">${totalBeneficiaries}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToCollect</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToValidate</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- TASK 2: Validate Beneficiary Data (CPF checksum, age 0-120) -->
+    <bpmn:serviceTask id="Task_ValidateData_V3" name="Validate Beneficiary Data"
+                      camunda:type="external" camunda:topic="validate-beneficiary-data">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="beneficiariesData">${beneficiariesData}</camunda:inputParameter>
+          <camunda:outputParameter name="validationResults">${validationResults}</camunda:outputParameter>
+          <camunda:outputParameter name="allValid">${allValid}</camunda:outputParameter>
+          <camunda:outputParameter name="validationErrors">${validationErrors}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToValidate</bpmn:incoming>
+      <bpmn:incoming>Flow_CorrectedToValidate</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToValidationDecision</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- BOUNDARY EVENT: Validation Timeout -->
+    <bpmn:boundaryEvent id="Event_ValidationTimeout_V3" name="Validation Timeout"
+                        cancelActivity="true" attachedToRef="Task_ValidateData_V3">
+      <bpmn:outgoing>Flow_ValidationTimeoutToFailure</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>P2D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <!-- GATEWAY: Validation Decision -->
+    <bpmn:exclusiveGateway id="Gateway_ValidationDecision_V3" name="Data Valid?" default="Flow_ValidationFailed">
+      <bpmn:incoming>Flow_ToValidationDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ValidationPassed</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ValidationFailed</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- TASK: Correct Invalid Data -->
+    <bpmn:userTask id="Task_CorrectData_V3" name="Correct Invalid Data"
+                   camunda:candidateGroups="operations,customer-service">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="validationErrors" label="Validation Errors" type="string" />
+          <camunda:formField id="correctedData" label="Corrected Data (JSON)" type="string" />
+          <camunda:formField id="clientNotified" label="Client Notified?" type="boolean" />
+          <camunda:formField id="correctionComplete" label="Correction Complete?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ValidationFailed</bpmn:incoming>
+      <bpmn:outgoing>Flow_CorrectedToValidate</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- TASK 3: ANS Registration (72-hour compliance deadline) -->
+    <bpmn:serviceTask id="Task_RegisterANS_V3" name="Register with ANS (72h deadline)"
+                      camunda:delegateExpression="${ansRegistrationDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="beneficiariesData">${beneficiariesData}</camunda:inputParameter>
+          <camunda:inputParameter name="contractId">${contractId}</camunda:inputParameter>
+          <camunda:inputParameter name="operatorRegistration">${operatorANSCode}</camunda:inputParameter>
+          <camunda:outputParameter name="ansProtocolNumber">${ansProtocolNumber}</camunda:outputParameter>
+          <camunda:outputParameter name="ansRegistrationDate">${ansRegistrationDate}</camunda:outputParameter>
+          <camunda:outputParameter name="ansApproved">${ansApproved}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ValidationPassed</bpmn:incoming>
+      <bpmn:incoming>Flow_RetryANS</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToANSDecision</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- BOUNDARY EVENT: ANS Registration Timeout (72 hours) -->
+    <bpmn:boundaryEvent id="Event_ANSTimeout_V3" name="ANS Compliance Timeout (72h)"
+                        cancelActivity="true" attachedToRef="Task_RegisterANS_V3">
+      <bpmn:outgoing>Flow_ANSTimeoutToFailure</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT72H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <!-- BOUNDARY EVENT: ANS Registration Error -->
+    <bpmn:boundaryEvent id="Event_ANSError_V3" name="ANS Registration Error"
+                        attachedToRef="Task_RegisterANS_V3">
+      <bpmn:outgoing>Flow_ANSErrorToResolve</bpmn:outgoing>
+      <bpmn:errorEventDefinition errorRef="Error_ANSRegistration" />
+    </bpmn:boundaryEvent>
+
+    <!-- TASK: Resolve ANS Issues -->
+    <bpmn:userTask id="Task_ResolveANSIssues_V3" name="Resolve ANS Registration Issues"
+                   camunda:candidateGroups="operations,compliance">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="ansErrorDetails" label="ANS Error Details" type="string" />
+          <camunda:formField id="resolutionStrategy" label="Resolution Strategy" type="string" />
+          <camunda:formField id="correctedSubmission" label="Corrected Submission" type="string" />
+          <camunda:formField id="retryANS" label="Retry ANS Registration?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ANSErrorToResolve</bpmn:incoming>
+      <bpmn:outgoing>Flow_ResolveToDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- GATEWAY: Retry ANS? -->
+    <bpmn:exclusiveGateway id="Gateway_RetryANS_V3" name="Retry ANS?" default="Flow_NoRetryToFailure">
+      <bpmn:incoming>Flow_ResolveToDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_RetryANS</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NoRetryToFailure</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- GATEWAY: ANS Approval Decision -->
+    <bpmn:exclusiveGateway id="Gateway_ANSApproval_V3" name="ANS Approved?" default="Flow_ANSRejected">
+      <bpmn:incoming>Flow_ToANSDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ANSApproved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ANSRejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- TASK: Handle ANS Rejection -->
+    <bpmn:userTask id="Task_HandleANSRejection_V3" name="Handle ANS Rejection"
+                   camunda:candidateGroups="operations,compliance,executives">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="rejectionReason" label="ANS Rejection Reason" type="string" />
+          <camunda:formField id="remedialAction" label="Remedial Action Plan" type="string" />
+          <camunda:formField id="clientImpact" label="Client Impact Assessment" type="string" />
+          <camunda:formField id="escalationNeeded" label="Escalation Needed?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ANSRejected</bpmn:incoming>
+      <bpmn:outgoing>Flow_RejectionToFailure</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- TASK 4: Generate Health Cards (PDF format) -->
+    <bpmn:serviceTask id="Task_GenerateCards_V3" name="Generate Health Cards (PDF)"
+                      camunda:delegateExpression="${healthCardGenerationDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="beneficiariesData">${beneficiariesData}</camunda:inputParameter>
+          <camunda:inputParameter name="ansProtocolNumber">${ansProtocolNumber}</camunda:inputParameter>
+          <camunda:inputParameter name="contractId">${contractId}</camunda:inputParameter>
+          <camunda:outputParameter name="healthCardsGenerated">${healthCardsGenerated}</camunda:outputParameter>
+          <camunda:outputParameter name="cardUrls">${cardUrls}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ANSApproved</bpmn:incoming>
+      <bpmn:incoming>Flow_RegenerateCards</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToCardsCheck</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- BOUNDARY EVENT: Card Generation Error -->
+    <bpmn:boundaryEvent id="Event_CardGenerationError_V3" name="Card Generation Error"
+                        attachedToRef="Task_GenerateCards_V3">
+      <bpmn:outgoing>Flow_CardErrorToResolve</bpmn:outgoing>
+      <bpmn:errorEventDefinition errorRef="Error_CardGeneration" />
+    </bpmn:boundaryEvent>
+
+    <!-- TASK: Resolve Card Generation Issues -->
+    <bpmn:userTask id="Task_ResolveCardIssues_V3" name="Resolve Card Generation Issues"
+                   camunda:candidateGroups="operations,technical-support">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="cardErrorDetails" label="Card Error Details" type="string" />
+          <camunda:formField id="templateIssue" label="Template Issue?" type="boolean" />
+          <camunda:formField id="dataFormatIssue" label="Data Format Issue?" type="boolean" />
+          <camunda:formField id="regenerateCards" label="Regenerate Cards?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CardErrorToResolve</bpmn:incoming>
+      <bpmn:outgoing>Flow_CardResolveToDecision</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- GATEWAY: Regenerate Cards? -->
+    <bpmn:exclusiveGateway id="Gateway_RegenerateCards_V3" name="Regenerate?" default="Flow_NoRegenerateToFailure">
+      <bpmn:incoming>Flow_CardResolveToDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_RegenerateCards</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NoRegenerateToFailure</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- GATEWAY: Cards Generated Successfully? -->
+    <bpmn:exclusiveGateway id="Gateway_CardsCheck_V3" name="Cards OK?" default="Flow_CardsOK">
+      <bpmn:incoming>Flow_ToCardsCheck</bpmn:incoming>
+      <bpmn:outgoing>Flow_CardsOK</bpmn:outgoing>
+      <bpmn:outgoing>Flow_CardsNotOK</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- TASK 5: Send Credentials (email/SMS) -->
+    <bpmn:serviceTask id="Task_SendCredentials_V3" name="Send Credentials via Email/SMS"
+                      camunda:delegateExpression="${credentialDeliveryDelegate}">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="beneficiariesData">${beneficiariesData}</camunda:inputParameter>
+          <camunda:inputParameter name="cardUrls">${cardUrls}</camunda:inputParameter>
+          <camunda:inputParameter name="deliveryMethod">email_and_sms</camunda:inputParameter>
+          <camunda:outputParameter name="credentialsSent">${credentialsSent}</camunda:outputParameter>
+          <camunda:outputParameter name="deliveryStatus">${deliveryStatus}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_CardsOK</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToWelcome</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- TASK 6: Send Welcome Kit -->
+    <bpmn:sendTask id="Task_SendWelcome_V3" name="Send Welcome Kit"
+                   camunda:type="external" camunda:topic="send-welcome-kit">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="clientId">${clientId}</camunda:inputParameter>
+          <camunda:inputParameter name="beneficiariesData">${beneficiariesData}</camunda:inputParameter>
+          <camunda:inputParameter name="welcomeKitContents">
+            {
+              "userGuide": true,
+              "providerNetwork": true,
+              "emergencyContacts": true,
+              "termsAndConditions": true,
+              "benefitsSummary": true
+            }
+          </camunda:inputParameter>
+          <camunda:outputParameter name="welcomeKitSent">${welcomeKitSent}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToWelcome</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToOrientation</bpmn:outgoing>
+    </bpmn:sendTask>
+
+    <!-- TASK 7: Schedule Orientation Session -->
+    <bpmn:userTask id="Task_ScheduleOrientation_V3" name="Schedule Orientation Session"
+                   camunda:candidateGroups="customer-success,operations">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="orientationDate" label="Orientation Date" type="date">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+            </camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="orientationTime" label="Orientation Time" type="string" />
+          <camunda:formField id="orientationFormat" label="Orientation Format" type="enum">
+            <camunda:value id="in_person" name="In Person" />
+            <camunda:value id="online" name="Online (Video)" />
+            <camunda:value id="hybrid" name="Hybrid" />
+          </camunda:formField>
+          <camunda:formField id="orientationTopics" label="Topics to Cover" type="string" />
+          <camunda:formField id="clientContactConfirmed" label="Client Contact Confirmed?" type="boolean" />
+          <camunda:formField id="materialsPrep ared" label="Materials Prepared?" type="boolean" />
+          <camunda:formField id="orientationComplete" label="Orientation Scheduled?" type="boolean">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+            </camunda:validation>
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToOrientation</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToSuccess</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- TASK: Onboarding Failure Handling -->
+    <bpmn:userTask id="Task_HandleOnboardingFailure_V3" name="Handle Onboarding Failure"
+                   camunda:candidateGroups="operations,customer-service,executives">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="failureStage" label="Failure Stage" type="string" />
+          <camunda:formField id="failureReason" label="Failure Reason" type="string" />
+          <camunda:formField id="clientNotificationSent" label="Client Notification Sent?" type="boolean" />
+          <camunda:formField id="remediationPlan" label="Remediation Plan" type="string" />
+          <camunda:formField id="escalationRequired" label="Escalation Required?" type="boolean" />
+          <camunda:formField id="compensationOffered" label="Compensation Offered?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ValidationTimeoutToFailure</bpmn:incoming>
+      <bpmn:incoming>Flow_ANSTimeoutToFailure</bpmn:incoming>
+      <bpmn:incoming>Flow_RejectionToFailure</bpmn:incoming>
+      <bpmn:incoming>Flow_NoRetryToFailure</bpmn:incoming>
+      <bpmn:incoming>Flow_NoRegenerateToFailure</bpmn:incoming>
+      <bpmn:incoming>Flow_CardsNotOK</bpmn:incoming>
+      <bpmn:outgoing>Flow_FailureToEnd</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- COMPENSATION HANDLER -->
+    <bpmn:boundaryEvent id="Event_CompensationTrigger_Onboarding_V3" name="Compensation Trigger"
+                        attachedToRef="Task_RegisterANS_V3">
+      <bpmn:compensateEventDefinition />
+    </bpmn:boundaryEvent>
+
+    <bpmn:userTask id="Task_CompensateOnboarding_V3" name="Rollback Onboarding Activities"
+                   isForCompensation="true"
+                   camunda:candidateGroups="operations,compliance">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="rollbackActions" label="Rollback Actions" type="string" />
+          <camunda:formField id="ansDeregistration" label="ANS Deregistration Needed?" type="boolean" />
+          <camunda:formField id="clientNotification" label="Client Notification Sent?" type="boolean" />
+          <camunda:formField id="dataCleanup" label="Data Cleanup Complete?" type="boolean" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+
+    <!-- END EVENTS -->
+    <bpmn:endEvent id="Event_OnboardingSuccess_V3" name="Beneficiary Onboarding Complete">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="javascript">
+            execution.setVariable('onboardingComplete', true);
+            execution.setVariable('onboardingEndDate', new Date().getTime());
+            execution.setVariable('beneficiariesOnboarded', execution.getVariable('totalBeneficiaries'));
+          </camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToSuccess</bpmn:incoming>
+      <bpmn:messageEventDefinition messageRef="Message_OnboardingComplete" />
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="Event_OnboardingFailed_V3" name="Beneficiary Onboarding Failed">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="javascript">
+            execution.setVariable('onboardingComplete', false);
+            execution.setVariable('onboardingFailed', true);
+            execution.setVariable('onboardingEndDate', new Date().getTime());
+          </camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_FailureToEnd</bpmn:incoming>
+      <bpmn:errorEventDefinition errorRef="Error_OnboardingFailure" />
+    </bpmn:endEvent>
+
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="Flow_ToCollect" sourceRef="Event_OnboardingStart_V3" targetRef="Task_CollectData_V3" />
+    <bpmn:sequenceFlow id="Flow_ToValidate" sourceRef="Task_CollectData_V3" targetRef="Task_ValidateData_V3" />
+    <bpmn:sequenceFlow id="Flow_ToValidationDecision" sourceRef="Task_ValidateData_V3" targetRef="Gateway_ValidationDecision_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ValidationPassed" name="Yes" sourceRef="Gateway_ValidationDecision_V3" targetRef="Task_RegisterANS_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${allValid == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ValidationFailed" name="No" sourceRef="Gateway_ValidationDecision_V3" targetRef="Task_CorrectData_V3" />
+    <bpmn:sequenceFlow id="Flow_CorrectedToValidate" sourceRef="Task_CorrectData_V3" targetRef="Task_ValidateData_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToANSDecision" sourceRef="Task_RegisterANS_V3" targetRef="Gateway_ANSApproval_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ANSApproved" name="Yes" sourceRef="Gateway_ANSApproval_V3" targetRef="Task_GenerateCards_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${ansApproved == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ANSRejected" name="No" sourceRef="Gateway_ANSApproval_V3" targetRef="Task_HandleANSRejection_V3" />
+    <bpmn:sequenceFlow id="Flow_RejectionToFailure" sourceRef="Task_HandleANSRejection_V3" targetRef="Task_HandleOnboardingFailure_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ANSErrorToResolve" sourceRef="Event_ANSError_V3" targetRef="Task_ResolveANSIssues_V3" />
+    <bpmn:sequenceFlow id="Flow_ResolveToDecision" sourceRef="Task_ResolveANSIssues_V3" targetRef="Gateway_RetryANS_V3" />
+
+    <bpmn:sequenceFlow id="Flow_RetryANS" name="Yes" sourceRef="Gateway_RetryANS_V3" targetRef="Task_RegisterANS_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${retryANS == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_NoRetryToFailure" name="No" sourceRef="Gateway_RetryANS_V3" targetRef="Task_HandleOnboardingFailure_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToCardsCheck" sourceRef="Task_GenerateCards_V3" targetRef="Gateway_CardsCheck_V3" />
+
+    <bpmn:sequenceFlow id="Flow_CardsOK" name="Yes" sourceRef="Gateway_CardsCheck_V3" targetRef="Task_SendCredentials_V3" />
+
+    <bpmn:sequenceFlow id="Flow_CardsNotOK" name="No" sourceRef="Gateway_CardsCheck_V3" targetRef="Task_HandleOnboardingFailure_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${healthCardsGenerated == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_CardErrorToResolve" sourceRef="Event_CardGenerationError_V3" targetRef="Task_ResolveCardIssues_V3" />
+    <bpmn:sequenceFlow id="Flow_CardResolveToDecision" sourceRef="Task_ResolveCardIssues_V3" targetRef="Gateway_RegenerateCards_V3" />
+
+    <bpmn:sequenceFlow id="Flow_RegenerateCards" name="Yes" sourceRef="Gateway_RegenerateCards_V3" targetRef="Task_GenerateCards_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${regenerateCards == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_NoRegenerateToFailure" name="No" sourceRef="Gateway_RegenerateCards_V3" targetRef="Task_HandleOnboardingFailure_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ToWelcome" sourceRef="Task_SendCredentials_V3" targetRef="Task_SendWelcome_V3" />
+    <bpmn:sequenceFlow id="Flow_ToOrientation" sourceRef="Task_SendWelcome_V3" targetRef="Task_ScheduleOrientation_V3" />
+    <bpmn:sequenceFlow id="Flow_ToSuccess" sourceRef="Task_ScheduleOrientation_V3" targetRef="Event_OnboardingSuccess_V3" />
+
+    <bpmn:sequenceFlow id="Flow_ValidationTimeoutToFailure" sourceRef="Event_ValidationTimeout_V3" targetRef="Task_HandleOnboardingFailure_V3" />
+    <bpmn:sequenceFlow id="Flow_ANSTimeoutToFailure" sourceRef="Event_ANSTimeout_V3" targetRef="Task_HandleOnboardingFailure_V3" />
+
+    <bpmn:sequenceFlow id="Flow_FailureToEnd" sourceRef="Task_HandleOnboardingFailure_V3" targetRef="Event_OnboardingFailed_V3" />
+
+    <!-- Association for Compensation -->
+    <bpmn:association id="Association_Compensation_Onboarding_V3" associationDirection="One"
+                      sourceRef="Event_CompensationTrigger_Onboarding_V3" targetRef="Task_CompensateOnboarding_V3" />
+
+  </bpmn:process>
+
+  <!-- ERROR DEFINITIONS -->
+  <bpmn:error id="Error_ANSRegistration" name="ANSRegistrationError" errorCode="ANS_REGISTRATION_ERROR" />
+  <bpmn:error id="Error_CardGeneration" name="CardGenerationError" errorCode="CARD_GENERATION_ERROR" />
+  <bpmn:error id="Error_OnboardingFailure" name="OnboardingFailure" errorCode="ONBOARDING_FAILURE" />
+
+  <!-- MESSAGE DEFINITIONS -->
+  <bpmn:message id="Message_OnboardingComplete" name="OnboardingComplete" />
+
+  <!-- BPMN DIAGRAM (minimal for validation) -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Beneficiary_Onboarding_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_Beneficiary_Onboarding_V3" bpmnElement="Process_Beneficiary_Onboarding_V3">
+      <!-- Diagram shapes omitted for brevity - would be added by Camunda Modeler -->
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

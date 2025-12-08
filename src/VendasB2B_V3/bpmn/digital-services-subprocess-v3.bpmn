@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   id="Definitions_DigitalServices_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_DigitalServices_V3" name="Ativação Serviços Digitais V3" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_DigitalStart_V3" name="Iniciar Ativação Digital">
+      <bpmn:outgoing>Flow_Start_Parallel</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- V3 Enhancement: 5-Way Parallel Gateway -->
+    <bpmn:parallelGateway id="Gateway_ParallelServices_V3" name="Ativar 5 Serviços em Paralelo">
+      <bpmn:incoming>Flow_Start_Parallel</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Accounts</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Mobile</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Portal</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Telemedicine</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Chat</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- Service 1: Digital Accounts -->
+    <bpmn:serviceTask id="Task_ActivateAccounts" name="Ativar Contas Digitais" camunda:type="external" camunda:topic="activate-digital-accounts">
+      <bpmn:incoming>Flow_To_Accounts</bpmn:incoming>
+      <bpmn:outgoing>Flow_Accounts_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Service 2: Mobile App -->
+    <bpmn:serviceTask id="Task_ActivateMobile" name="Ativar App Mobile" camunda:type="external" camunda:topic="activate-mobile-app">
+      <bpmn:incoming>Flow_To_Mobile</bpmn:incoming>
+      <bpmn:outgoing>Flow_Mobile_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Service 3: Web Portal -->
+    <bpmn:serviceTask id="Task_ActivatePortal" name="Ativar Portal Web" camunda:type="external" camunda:topic="activate-web-portal">
+      <bpmn:incoming>Flow_To_Portal</bpmn:incoming>
+      <bpmn:outgoing>Flow_Portal_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Service 4: Telemedicine -->
+    <bpmn:serviceTask id="Task_ActivateTelemedicine" name="Ativar Telemedicina" camunda:type="external" camunda:topic="activate-telemedicine">
+      <bpmn:incoming>Flow_To_Telemedicine</bpmn:incoming>
+      <bpmn:outgoing>Flow_Telemedicine_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Service 5: Chat Support -->
+    <bpmn:serviceTask id="Task_ActivateChat" name="Ativar Chat 24/7" camunda:type="external" camunda:topic="activate-chat-support">
+      <bpmn:incoming>Flow_To_Chat</bpmn:incoming>
+      <bpmn:outgoing>Flow_Chat_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Join Gateway -->
+    <bpmn:parallelGateway id="Gateway_JoinServices_V3" name="Unir Serviços">
+      <bpmn:incoming>Flow_Accounts_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Mobile_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Portal_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Telemedicine_Join</bpmn:incoming>
+      <bpmn:incoming>Flow_Chat_Join</bpmn:incoming>
+      <bpmn:outgoing>Flow_Join_Validate</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- Validate Services -->
+    <bpmn:serviceTask id="Task_ValidateServices" name="Validar Serviços" camunda:type="external" camunda:topic="validate-all-services">
+      <bpmn:incoming>Flow_Join_Validate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Validate_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="Event_DigitalEnd_V3" name="Serviços Digitais Ativados">
+      <bpmn:incoming>Flow_Validate_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_Parallel" sourceRef="Event_DigitalStart_V3" targetRef="Gateway_ParallelServices_V3" />
+    <bpmn:sequenceFlow id="Flow_To_Accounts" sourceRef="Gateway_ParallelServices_V3" targetRef="Task_ActivateAccounts" />
+    <bpmn:sequenceFlow id="Flow_To_Mobile" sourceRef="Gateway_ParallelServices_V3" targetRef="Task_ActivateMobile" />
+    <bpmn:sequenceFlow id="Flow_To_Portal" sourceRef="Gateway_ParallelServices_V3" targetRef="Task_ActivatePortal" />
+    <bpmn:sequenceFlow id="Flow_To_Telemedicine" sourceRef="Gateway_ParallelServices_V3" targetRef="Task_ActivateTelemedicine" />
+    <bpmn:sequenceFlow id="Flow_To_Chat" sourceRef="Gateway_ParallelServices_V3" targetRef="Task_ActivateChat" />
+
+    <bpmn:sequenceFlow id="Flow_Accounts_Join" sourceRef="Task_ActivateAccounts" targetRef="Gateway_JoinServices_V3" />
+    <bpmn:sequenceFlow id="Flow_Mobile_Join" sourceRef="Task_ActivateMobile" targetRef="Gateway_JoinServices_V3" />
+    <bpmn:sequenceFlow id="Flow_Portal_Join" sourceRef="Task_ActivatePortal" targetRef="Gateway_JoinServices_V3" />
+    <bpmn:sequenceFlow id="Flow_Telemedicine_Join" sourceRef="Task_ActivateTelemedicine" targetRef="Gateway_JoinServices_V3" />
+    <bpmn:sequenceFlow id="Flow_Chat_Join" sourceRef="Task_ActivateChat" targetRef="Gateway_JoinServices_V3" />
+
+    <bpmn:sequenceFlow id="Flow_Join_Validate" sourceRef="Gateway_JoinServices_V3" targetRef="Task_ValidateServices" />
+    <bpmn:sequenceFlow id="Flow_Validate_End" sourceRef="Task_ValidateServices" targetRef="Event_DigitalEnd_V3" />
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_DigitalServices_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_DigitalServices_V3" bpmnElement="Process_DigitalServices_V3">
+
+      <bpmndi:BPMNShape id="Event_DigitalStart_V3_di" bpmnElement="Event_DigitalStart_V3">
+        <dc:Bounds x="180" y="260" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_ParallelServices_V3_di" bpmnElement="Gateway_ParallelServices_V3">
+        <dc:Bounds x="270" y="253" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ActivateAccounts_di" bpmnElement="Task_ActivateAccounts">
+        <dc:Bounds x="370" y="60" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ActivateMobile_di" bpmnElement="Task_ActivateMobile">
+        <dc:Bounds x="370" y="160" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ActivatePortal_di" bpmnElement="Task_ActivatePortal">
+        <dc:Bounds x="370" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ActivateTelemedicine_di" bpmnElement="Task_ActivateTelemedicine">
+        <dc:Bounds x="370" y="360" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ActivateChat_di" bpmnElement="Task_ActivateChat">
+        <dc:Bounds x="370" y="460" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_JoinServices_V3_di" bpmnElement="Gateway_JoinServices_V3">
+        <dc:Bounds x="520" y="253" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ValidateServices_di" bpmnElement="Task_ValidateServices">
+        <dc:Bounds x="620" y="238" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_DigitalEnd_V3_di" bpmnElement="Event_DigitalEnd_V3">
+        <dc:Bounds x="772" y="260" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_Parallel_di" bpmnElement="Flow_Start_Parallel">
+        <di:waypoint x="216" y="278" />
+        <di:waypoint x="270" y="278" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Accounts_di" bpmnElement="Flow_To_Accounts">
+        <di:waypoint x="295" y="253" />
+        <di:waypoint x="295" y="100" />
+        <di:waypoint x="370" y="100" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Mobile_di" bpmnElement="Flow_To_Mobile">
+        <di:waypoint x="295" y="278" />
+        <di:waypoint x="295" y="200" />
+        <di:waypoint x="370" y="200" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Portal_di" bpmnElement="Flow_To_Portal">
+        <di:waypoint x="320" y="278" />
+        <di:waypoint x="370" y="278" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Telemedicine_di" bpmnElement="Flow_To_Telemedicine">
+        <di:waypoint x="295" y="303" />
+        <di:waypoint x="295" y="400" />
+        <di:waypoint x="370" y="400" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_To_Chat_di" bpmnElement="Flow_To_Chat">
+        <di:waypoint x="295" y="303" />
+        <di:waypoint x="295" y="500" />
+        <di:waypoint x="370" y="500" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Accounts_Join_di" bpmnElement="Flow_Accounts_Join">
+        <di:waypoint x="470" y="100" />
+        <di:waypoint x="545" y="100" />
+        <di:waypoint x="545" y="253" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Mobile_Join_di" bpmnElement="Flow_Mobile_Join">
+        <di:waypoint x="470" y="200" />
+        <di:waypoint x="545" y="200" />
+        <di:waypoint x="545" y="253" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Portal_Join_di" bpmnElement="Flow_Portal_Join">
+        <di:waypoint x="470" y="300" />
+        <di:waypoint x="520" y="300" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Telemedicine_Join_di" bpmnElement="Flow_Telemedicine_Join">
+        <di:waypoint x="470" y="400" />
+        <di:waypoint x="545" y="400" />
+        <di:waypoint x="545" y="303" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Chat_Join_di" bpmnElement="Flow_Chat_Join">
+        <di:waypoint x="470" y="500" />
+        <di:waypoint x="545" y="500" />
+        <di:waypoint x="545" y="303" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Join_Validate_di" bpmnElement="Flow_Join_Validate">
+        <di:waypoint x="570" y="278" />
+        <di:waypoint x="620" y="278" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Validate_End_di" bpmnElement="Flow_Validate_End">
+        <di:waypoint x="720" y="278" />
+        <di:waypoint x="772" y="278" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

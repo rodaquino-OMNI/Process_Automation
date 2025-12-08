@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   id="Definitions_ContractExpansion_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_ContractExpansion_V3" name="Expansão Contratual V3" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_ExpansionStart_V3" name="Iniciar Expansão">
+      <bpmn:outgoing>Flow_Start_IdentifyOpp</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- Identify Expansion Opportunity -->
+    <bpmn:userTask id="Task_IdentifyOpportunity" name="Identificar Oportunidade" camunda:assignee="${accountManager}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="expansionType" label="Tipo de Expansão" type="enum">
+            <camunda:value id="new_services" name="Novos Serviços" />
+            <camunda:value id="more_users" name="Mais Usuários" />
+            <camunda:value id="upgrade_plan" name="Upgrade de Plano" />
+            <camunda:value id="additional_locations" name="Novas Localizações" />
+          </camunda:formField>
+          <camunda:formField id="opportunityDescription" label="Descrição da Oportunidade" type="string" />
+          <camunda:formField id="estimatedValue" label="Valor Estimado (R$)" type="long" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_IdentifyOpp</bpmn:incoming>
+      <bpmn:outgoing>Flow_Identify_ScoreDMN</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- V3 Enhancement: Expansion Scoring DMN (reuse MEDDIC pattern) -->
+    <bpmn:businessRuleTask id="Task_ScoreExpansion_DMN" name="Pontuar Expansão (DMN)"
+                           camunda:resultVariable="expansionScore"
+                           camunda:decisionRef="decision_expansion_scoring"
+                           camunda:mapDecisionResult="singleResult">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="expansionType">${expansionType}</camunda:inputParameter>
+          <camunda:inputParameter name="estimatedValue">${estimatedValue}</camunda:inputParameter>
+          <camunda:inputParameter name="customerSatisfaction">${customerSatisfaction}</camunda:inputParameter>
+          <camunda:outputParameter name="expansionPriority">${expansionPriority}</camunda:outputParameter>
+          <camunda:outputParameter name="recommendedApproach">${recommendedApproach}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Identify_ScoreDMN</bpmn:incoming>
+      <bpmn:outgoing>Flow_Score_Gateway</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- Evaluate Expansion Score -->
+    <bpmn:exclusiveGateway id="Gateway_EvaluateScore" name="Score?">
+      <bpmn:incoming>Flow_Score_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_HighScore</bpmn:outgoing>
+      <bpmn:outgoing>Flow_LowScore</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- High Score Path: Proceed to Negotiation -->
+    <bpmn:callActivity id="Task_RecursiveNegotiation" name="Negociação (Recursive CallActivity)" calledElement="Process_Negotiation_V3">
+      <bpmn:extensionElements>
+        <camunda:in businessKey="#{execution.processBusinessKey}" />
+        <camunda:in variables="all" />
+        <camunda:out variables="all" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_HighScore</bpmn:incoming>
+      <bpmn:outgoing>Flow_Negotiation_Update</bpmn:outgoing>
+    </bpmn:callActivity>
+
+    <!-- Update Contract -->
+    <bpmn:serviceTask id="Task_UpdateContract" name="Atualizar Contrato" camunda:type="external" camunda:topic="update-contract-expansion">
+      <bpmn:incoming>Flow_Negotiation_Update</bpmn:incoming>
+      <bpmn:outgoing>Flow_Update_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="Event_ExpansionSuccess" name="Expansão Concluída">
+      <bpmn:incoming>Flow_Update_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Low Score Path: Postpone -->
+    <bpmn:userTask id="Task_PostponeExpansion" name="Adiar Expansão" camunda:assignee="${accountManager}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="postponeReason" label="Motivo do Adiamento" type="string" />
+          <camunda:formField id="revisitDate" label="Data para Revisitar" type="date" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_LowScore</bpmn:incoming>
+      <bpmn:outgoing>Flow_Postpone_End</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:endEvent id="Event_ExpansionPostponed" name="Expansão Adiada">
+      <bpmn:incoming>Flow_Postpone_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_IdentifyOpp" sourceRef="Event_ExpansionStart_V3" targetRef="Task_IdentifyOpportunity" />
+    <bpmn:sequenceFlow id="Flow_Identify_ScoreDMN" sourceRef="Task_IdentifyOpportunity" targetRef="Task_ScoreExpansion_DMN" />
+    <bpmn:sequenceFlow id="Flow_Score_Gateway" sourceRef="Task_ScoreExpansion_DMN" targetRef="Gateway_EvaluateScore" />
+
+    <bpmn:sequenceFlow id="Flow_HighScore" name="Score ≥ 7" sourceRef="Gateway_EvaluateScore" targetRef="Task_RecursiveNegotiation">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${expansionScore &gt;= 7}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_LowScore" name="Score &lt; 7" sourceRef="Gateway_EvaluateScore" targetRef="Task_PostponeExpansion">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${expansionScore &lt; 7}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Negotiation_Update" sourceRef="Task_RecursiveNegotiation" targetRef="Task_UpdateContract" />
+    <bpmn:sequenceFlow id="Flow_Update_End" sourceRef="Task_UpdateContract" targetRef="Event_ExpansionSuccess" />
+    <bpmn:sequenceFlow id="Flow_Postpone_End" sourceRef="Task_PostponeExpansion" targetRef="Event_ExpansionPostponed" />
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ContractExpansion_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_ContractExpansion_V3" bpmnElement="Process_ContractExpansion_V3">
+
+      <bpmndi:BPMNShape id="Event_ExpansionStart_V3_di" bpmnElement="Event_ExpansionStart_V3">
+        <dc:Bounds x="180" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_IdentifyOpportunity_di" bpmnElement="Task_IdentifyOpportunity">
+        <dc:Bounds x="270" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ScoreExpansion_DMN_di" bpmnElement="Task_ScoreExpansion_DMN">
+        <dc:Bounds x="420" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_EvaluateScore_di" bpmnElement="Gateway_EvaluateScore" isMarkerVisible="true">
+        <dc:Bounds x="570" y="193" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_RecursiveNegotiation_di" bpmnElement="Task_RecursiveNegotiation">
+        <dc:Bounds x="670" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_UpdateContract_di" bpmnElement="Task_UpdateContract">
+        <dc:Bounds x="820" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_ExpansionSuccess_di" bpmnElement="Event_ExpansionSuccess">
+        <dc:Bounds x="972" y="122" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_PostponeExpansion_di" bpmnElement="Task_PostponeExpansion">
+        <dc:Bounds x="670" y="260" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_ExpansionPostponed_di" bpmnElement="Event_ExpansionPostponed">
+        <dc:Bounds x="822" y="282" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_IdentifyOpp_di" bpmnElement="Flow_Start_IdentifyOpp">
+        <di:waypoint x="216" y="218" />
+        <di:waypoint x="270" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Identify_ScoreDMN_di" bpmnElement="Flow_Identify_ScoreDMN">
+        <di:waypoint x="370" y="218" />
+        <di:waypoint x="420" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Score_Gateway_di" bpmnElement="Flow_Score_Gateway">
+        <di:waypoint x="520" y="218" />
+        <di:waypoint x="570" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_HighScore_di" bpmnElement="Flow_HighScore">
+        <di:waypoint x="595" y="193" />
+        <di:waypoint x="595" y="140" />
+        <di:waypoint x="670" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_LowScore_di" bpmnElement="Flow_LowScore">
+        <di:waypoint x="595" y="243" />
+        <di:waypoint x="595" y="300" />
+        <di:waypoint x="670" y="300" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Negotiation_Update_di" bpmnElement="Flow_Negotiation_Update">
+        <di:waypoint x="770" y="140" />
+        <di:waypoint x="820" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Update_End_di" bpmnElement="Flow_Update_End">
+        <di:waypoint x="920" y="140" />
+        <di:waypoint x="972" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Postpone_End_di" bpmnElement="Flow_Postpone_End">
+        <di:waypoint x="770" y="300" />
+        <di:waypoint x="822" y="300" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

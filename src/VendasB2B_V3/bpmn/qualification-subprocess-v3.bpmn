@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   id="Definitions_Qualification_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_Qualification_V3" name="Qualificação Lead V3 - MEDDIC Enhanced" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_QualificationStart_V3" name="Iniciar Qualificação V3">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="javascript">
+            execution.setVariable('qualificationVersion', 'V3');
+            execution.setVariable('fasesCompletas', []);
+            execution.setVariable('scoreHistorico', []);
+            execution.setVariable('dataInicioQualificacao', new Date());
+            execution.setVariable('scoreMEDDIC', 0);
+            execution.setVariable('fitScore', 0);
+            execution.setVariable('tentativasContato', 0);
+          </camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_Start_Enrichment</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- V3 Enhancement: Advanced Data Enrichment -->
+    <bpmn:serviceTask id="Task_EnrichLeadData_V3" name="Enriquecer Dados do Lead (V3)" camunda:type="external" camunda:topic="lead-enrichment-v3">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="companyName">${companyName}</camunda:inputParameter>
+          <camunda:inputParameter name="cnpj">${cnpj}</camunda:inputParameter>
+          <camunda:inputParameter name="enrichmentLevel">advanced</camunda:inputParameter>
+          <camunda:outputParameter name="companyData">${companyData}</camunda:outputParameter>
+          <camunda:outputParameter name="socialMediaData">${socialMediaData}</camunda:outputParameter>
+          <camunda:outputParameter name="financialData">${financialData}</camunda:outputParameter>
+          <camunda:outputParameter name="estimatedRevenue">${estimatedRevenue}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_Enrichment</bpmn:incoming>
+      <bpmn:outgoing>Flow_Enrichment_DualPath</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- V3 Feature: Dual-Path Gateway based on Deal Size -->
+    <bpmn:exclusiveGateway id="Gateway_DealSizeRouter" name="Deal Size Router">
+      <bpmn:incoming>Flow_Enrichment_DualPath</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToMEDDIC</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToFitScore</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Large Deal Path: MEDDIC Scoring -->
+    <bpmn:userTask id="Task_MEDDICDiscovery" name="MEDDIC Discovery Session" camunda:assignee="${accountExecutive}" camunda:candidateGroups="enterprise-sales">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="metrics" label="METRICS - Métricas Quantificáveis" type="string" />
+          <camunda:formField id="economicBuyer" label="ECONOMIC BUYER - Nome" type="string" />
+          <camunda:formField id="economicBuyerAccess" label="Acesso ao Economic Buyer?" type="boolean" />
+          <camunda:formField id="decisionCriteria" label="DECISION CRITERIA - Critérios" type="string" />
+          <camunda:formField id="decisionProcess" label="DECISION PROCESS - Processo" type="string" />
+          <camunda:formField id="identifyPain" label="IDENTIFY PAIN - Dor Principal" type="string" />
+          <camunda:formField id="painImpact" label="Impacto Financeiro da Dor (R$)" type="long" />
+          <camunda:formField id="champion" label="CHAMPION - Nome" type="string" />
+          <camunda:formField id="championInfluence" label="Influência do Champion (1-10)" type="long" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToMEDDIC</bpmn:incoming>
+      <bpmn:outgoing>Flow_MEDDIC_ToScore</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- V3 Enhancement: MEDDIC DMN Decision -->
+    <bpmn:businessRuleTask id="Task_CalculateMEDDIC_V3" name="Calcular Score MEDDIC (DMN)"
+                           camunda:resultVariable="scoreMEDDIC"
+                           camunda:decisionRef="qualification_dmn_decision"
+                           camunda:mapDecisionResult="singleResult">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="metrics">${metrics}</camunda:inputParameter>
+          <camunda:inputParameter name="economicBuyer">${economicBuyer}</camunda:inputParameter>
+          <camunda:inputParameter name="decisionCriteria">${decisionCriteria}</camunda:inputParameter>
+          <camunda:inputParameter name="identifyPain">${identifyPain}</camunda:inputParameter>
+          <camunda:inputParameter name="champion">${champion}</camunda:inputParameter>
+          <camunda:outputParameter name="qualificationScore">${scoreMEDDIC}</camunda:outputParameter>
+          <camunda:outputParameter name="recomendacao">${recomendacao}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_MEDDIC_ToScore</bpmn:incoming>
+      <bpmn:outgoing>Flow_MEDDIC_ToMerge</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- Small Deal Path: Fit Score -->
+    <bpmn:businessRuleTask id="Task_CalculateFitScore_V3" name="Calcular Fit Score (V1 Style)"
+                           camunda:resultVariable="fitScore"
+                           camunda:decisionRef="decision_lead_fit_score"
+                           camunda:mapDecisionResult="singleEntry">
+      <bpmn:incoming>Flow_ToFitScore</bpmn:incoming>
+      <bpmn:outgoing>Flow_FitScore_Evaluate</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <bpmn:exclusiveGateway id="Gateway_EvaluateFitScore" name="Fit Score?">
+      <bpmn:incoming>Flow_FitScore_Evaluate</bpmn:incoming>
+      <bpmn:outgoing>Flow_HighFit</bpmn:outgoing>
+      <bpmn:outgoing>Flow_MediumFit</bpmn:outgoing>
+      <bpmn:outgoing>Flow_LowFit</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:scriptTask id="Task_AutoQualify_V3" name="Auto-Qualificar Lead" scriptFormat="javascript">
+      <bpmn:incoming>Flow_HighFit</bpmn:incoming>
+      <bpmn:outgoing>Flow_AutoQualify_Merge</bpmn:outgoing>
+      <bpmn:script>
+        execution.setVariable('leadQualified', true);
+        execution.setVariable('qualificationReason', 'Fit score alto - critérios ideais atendidos');
+        execution.setVariable('priority', 'high');
+        execution.setVariable('qualificationMethod', 'automatic-fitScore');
+        execution.setVariable('finalScore', execution.getVariable('fitScore'));
+      </bpmn:script>
+    </bpmn:scriptTask>
+
+    <bpmn:userTask id="Task_ManualReview_V3" name="Revisão Manual" camunda:assignee="${leadQualifier}">
+      <bpmn:incoming>Flow_MediumFit</bpmn:incoming>
+      <bpmn:outgoing>Flow_ManualReview_Merge</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:scriptTask id="Task_AutoDisqualify_V3" name="Auto-Desqualificar" scriptFormat="javascript">
+      <bpmn:incoming>Flow_LowFit</bpmn:incoming>
+      <bpmn:outgoing>Flow_AutoDisqualify_Merge</bpmn:outgoing>
+      <bpmn:script>
+        execution.setVariable('leadQualified', false);
+        execution.setVariable('disqualificationReason', 'Fit score baixo - não atende critérios mínimos');
+        execution.setVariable('finalScore', execution.getVariable('fitScore'));
+      </bpmn:script>
+    </bpmn:scriptTask>
+
+    <!-- Merge Gateway -->
+    <bpmn:exclusiveGateway id="Gateway_MergeScoring" name="Merge Scoring Paths">
+      <bpmn:incoming>Flow_MEDDIC_ToMerge</bpmn:incoming>
+      <bpmn:incoming>Flow_AutoQualify_Merge</bpmn:incoming>
+      <bpmn:incoming>Flow_ManualReview_Merge</bpmn:incoming>
+      <bpmn:incoming>Flow_AutoDisqualify_Merge</bpmn:incoming>
+      <bpmn:outgoing>Flow_Merge_ToCRM</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Update CRM -->
+    <bpmn:serviceTask id="Task_UpdateCRM_V3" name="Atualizar CRM (V3)" camunda:type="external" camunda:topic="crm-update-v3">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="leadId">${leadId}</camunda:inputParameter>
+          <camunda:inputParameter name="qualified">${leadQualified}</camunda:inputParameter>
+          <camunda:inputParameter name="scoreMEDDIC">${scoreMEDDIC}</camunda:inputParameter>
+          <camunda:inputParameter name="fitScore">${fitScore}</camunda:inputParameter>
+          <camunda:inputParameter name="finalScore">${finalScore}</camunda:inputParameter>
+          <camunda:inputParameter name="qualificationMethod">${qualificationMethod}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Merge_ToCRM</bpmn:incoming>
+      <bpmn:outgoing>Flow_CRM_ToNotify</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Notify Team -->
+    <bpmn:sendTask id="Task_NotifyTeam_V3" name="Notificar Equipe" camunda:type="external" camunda:topic="notification-v3">
+      <bpmn:incoming>Flow_CRM_ToNotify</bpmn:incoming>
+      <bpmn:outgoing>Flow_Notify_ToEnd</bpmn:outgoing>
+    </bpmn:sendTask>
+
+    <!-- End Event -->
+    <bpmn:endEvent id="Event_QualificationEnd_V3" name="Qualificação V3 Concluída">
+      <bpmn:incoming>Flow_Notify_ToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_Enrichment" sourceRef="Event_QualificationStart_V3" targetRef="Task_EnrichLeadData_V3" />
+    <bpmn:sequenceFlow id="Flow_Enrichment_DualPath" sourceRef="Task_EnrichLeadData_V3" targetRef="Gateway_DealSizeRouter" />
+
+    <bpmn:sequenceFlow id="Flow_ToMEDDIC" name="Deal > R$500K" sourceRef="Gateway_DealSizeRouter" targetRef="Task_MEDDICDiscovery">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${estimatedRevenue &gt;= 500000}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ToFitScore" name="Deal ≤ R$500K" sourceRef="Gateway_DealSizeRouter" targetRef="Task_CalculateFitScore_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${estimatedRevenue &lt; 500000}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_MEDDIC_ToScore" sourceRef="Task_MEDDICDiscovery" targetRef="Task_CalculateMEDDIC_V3" />
+    <bpmn:sequenceFlow id="Flow_MEDDIC_ToMerge" sourceRef="Task_CalculateMEDDIC_V3" targetRef="Gateway_MergeScoring" />
+
+    <bpmn:sequenceFlow id="Flow_FitScore_Evaluate" sourceRef="Task_CalculateFitScore_V3" targetRef="Gateway_EvaluateFitScore" />
+
+    <bpmn:sequenceFlow id="Flow_HighFit" name="Alto (≥80)" sourceRef="Gateway_EvaluateFitScore" targetRef="Task_AutoQualify_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${fitScore &gt;= 80}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_MediumFit" name="Médio (50-79)" sourceRef="Gateway_EvaluateFitScore" targetRef="Task_ManualReview_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${fitScore &gt;= 50 &amp;&amp; fitScore &lt; 80}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_LowFit" name="Baixo (&lt;50)" sourceRef="Gateway_EvaluateFitScore" targetRef="Task_AutoDisqualify_V3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${fitScore &lt; 50}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_AutoQualify_Merge" sourceRef="Task_AutoQualify_V3" targetRef="Gateway_MergeScoring" />
+    <bpmn:sequenceFlow id="Flow_ManualReview_Merge" sourceRef="Task_ManualReview_V3" targetRef="Gateway_MergeScoring" />
+    <bpmn:sequenceFlow id="Flow_AutoDisqualify_Merge" sourceRef="Task_AutoDisqualify_V3" targetRef="Gateway_MergeScoring" />
+    <bpmn:sequenceFlow id="Flow_Merge_ToCRM" sourceRef="Gateway_MergeScoring" targetRef="Task_UpdateCRM_V3" />
+    <bpmn:sequenceFlow id="Flow_CRM_ToNotify" sourceRef="Task_UpdateCRM_V3" targetRef="Task_NotifyTeam_V3" />
+    <bpmn:sequenceFlow id="Flow_Notify_ToEnd" sourceRef="Task_NotifyTeam_V3" targetRef="Event_QualificationEnd_V3" />
+
+  </bpmn:process>
+
+  <!-- BPMN Diagram -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Qualification_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_Qualification_V3" bpmnElement="Process_Qualification_V3">
+
+      <bpmndi:BPMNShape id="Event_QualificationStart_V3_di" bpmnElement="Event_QualificationStart_V3">
+        <dc:Bounds x="180" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_EnrichLeadData_V3_di" bpmnElement="Task_EnrichLeadData_V3">
+        <dc:Bounds x="270" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_DealSizeRouter_di" bpmnElement="Gateway_DealSizeRouter" isMarkerVisible="true">
+        <dc:Bounds x="420" y="193" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_MEDDICDiscovery_di" bpmnElement="Task_MEDDICDiscovery">
+        <dc:Bounds x="520" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_CalculateMEDDIC_V3_di" bpmnElement="Task_CalculateMEDDIC_V3">
+        <dc:Bounds x="670" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_CalculateFitScore_V3_di" bpmnElement="Task_CalculateFitScore_V3">
+        <dc:Bounds x="520" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_EvaluateFitScore_di" bpmnElement="Gateway_EvaluateFitScore" isMarkerVisible="true">
+        <dc:Bounds x="670" y="295" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_AutoQualify_V3_di" bpmnElement="Task_AutoQualify_V3">
+        <dc:Bounds x="770" y="220" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ManualReview_V3_di" bpmnElement="Task_ManualReview_V3">
+        <dc:Bounds x="770" y="280" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_AutoDisqualify_V3_di" bpmnElement="Task_AutoDisqualify_V3">
+        <dc:Bounds x="770" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_MergeScoring_di" bpmnElement="Gateway_MergeScoring" isMarkerVisible="true">
+        <dc:Bounds x="920" y="193" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_UpdateCRM_V3_di" bpmnElement="Task_UpdateCRM_V3">
+        <dc:Bounds x="1020" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_NotifyTeam_V3_di" bpmnElement="Task_NotifyTeam_V3">
+        <dc:Bounds x="1170" y="178" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_QualificationEnd_V3_di" bpmnElement="Event_QualificationEnd_V3">
+        <dc:Bounds x="1322" y="200" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_Enrichment_di" bpmnElement="Flow_Start_Enrichment">
+        <di:waypoint x="216" y="218" />
+        <di:waypoint x="270" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Enrichment_DualPath_di" bpmnElement="Flow_Enrichment_DualPath">
+        <di:waypoint x="370" y="218" />
+        <di:waypoint x="420" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_ToMEDDIC_di" bpmnElement="Flow_ToMEDDIC">
+        <di:waypoint x="445" y="193" />
+        <di:waypoint x="445" y="120" />
+        <di:waypoint x="520" y="120" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_ToFitScore_di" bpmnElement="Flow_ToFitScore">
+        <di:waypoint x="445" y="243" />
+        <di:waypoint x="445" y="320" />
+        <di:waypoint x="520" y="320" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_MEDDIC_ToScore_di" bpmnElement="Flow_MEDDIC_ToScore">
+        <di:waypoint x="620" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_MEDDIC_ToMerge_di" bpmnElement="Flow_MEDDIC_ToMerge">
+        <di:waypoint x="770" y="120" />
+        <di:waypoint x="945" y="120" />
+        <di:waypoint x="945" y="193" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_FitScore_Evaluate_di" bpmnElement="Flow_FitScore_Evaluate">
+        <di:waypoint x="620" y="320" />
+        <di:waypoint x="670" y="320" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_HighFit_di" bpmnElement="Flow_HighFit">
+        <di:waypoint x="695" y="295" />
+        <di:waypoint x="695" y="260" />
+        <di:waypoint x="770" y="260" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_MediumFit_di" bpmnElement="Flow_MediumFit">
+        <di:waypoint x="720" y="320" />
+        <di:waypoint x="770" y="320" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_LowFit_di" bpmnElement="Flow_LowFit">
+        <di:waypoint x="695" y="345" />
+        <di:waypoint x="695" y="420" />
+        <di:waypoint x="770" y="420" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_AutoQualify_Merge_di" bpmnElement="Flow_AutoQualify_Merge">
+        <di:waypoint x="870" y="260" />
+        <di:waypoint x="945" y="260" />
+        <di:waypoint x="945" y="243" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_ManualReview_Merge_di" bpmnElement="Flow_ManualReview_Merge">
+        <di:waypoint x="870" y="320" />
+        <di:waypoint x="945" y="320" />
+        <di:waypoint x="945" y="243" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_AutoDisqualify_Merge_di" bpmnElement="Flow_AutoDisqualify_Merge">
+        <di:waypoint x="870" y="420" />
+        <di:waypoint x="945" y="420" />
+        <di:waypoint x="945" y="243" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Merge_ToCRM_di" bpmnElement="Flow_Merge_ToCRM">
+        <di:waypoint x="970" y="218" />
+        <di:waypoint x="1020" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_CRM_ToNotify_di" bpmnElement="Flow_CRM_ToNotify">
+        <di:waypoint x="1120" y="218" />
+        <di:waypoint x="1170" y="218" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Notify_ToEnd_di" bpmnElement="Flow_Notify_ToEnd">
+        <di:waypoint x="1270" y="218" />
+        <di:waypoint x="1322" y="218" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                   xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   id="Definitions_ValueDemo_V3"
+                   targetNamespace="http://bpmn.io/schema/bpmn"
+                   exporter="Claude Code V3"
+                   exporterVersion="3.0">
+
+  <bpmn:process id="Process_ValueDemo_V3" name="Demonstração de Valor V3" isExecutable="true" camunda:versionTag="3.0">
+
+    <bpmn:startEvent id="Event_ValueDemoStart_V3" name="Iniciar Demonstração V3">
+      <bpmn:outgoing>Flow_Start_PilotDecision</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- V3 Enhancement: Conditional Pilot Program -->
+    <bpmn:exclusiveGateway id="Gateway_PilotDecision" name="Pilot Program?">
+      <bpmn:incoming>Flow_Start_PilotDecision</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToPilot</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToWorkshop</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Pilot Program Path -->
+    <bpmn:userTask id="Task_SelectPilotType" name="Selecionar Tipo de Piloto" camunda:assignee="${vendedorResponsavel}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="pilotType" label="Tipo de Piloto" type="enum">
+            <camunda:value id="icu" name="UTI (30 dias)" />
+            <camunda:value id="radiology" name="Radiologia (45 dias)" />
+            <camunda:value id="unit" name="Unidade Completa (60 dias)" />
+            <camunda:value id="combo" name="Combo Multi-Departamento (90 dias)" />
+          </camunda:formField>
+          <camunda:formField id="pilotScope" label="Escopo do Piloto" type="string" />
+          <camunda:formField id="successMetrics" label="Métricas de Sucesso" type="string" />
+          <camunda:formField id="pilotDuration" label="Duração (dias)" type="long" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToPilot</bpmn:incoming>
+      <bpmn:outgoing>Flow_Pilot_Execute</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:serviceTask id="Task_ExecutePilot" name="Executar Piloto" camunda:type="external" camunda:topic="execute-pilot-program">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="pilotType">${pilotType}</camunda:inputParameter>
+          <camunda:inputParameter name="pilotScope">${pilotScope}</camunda:inputParameter>
+          <camunda:outputParameter name="pilotResults">${pilotResults}</camunda:outputParameter>
+          <camunda:outputParameter name="customerSatisfaction">${customerSatisfaction}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Pilot_Execute</bpmn:incoming>
+      <bpmn:outgoing>Flow_Pilot_Merge</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- V3 Enhancement: 4-Phase Value Workshop -->
+    <bpmn:subProcess id="SubProcess_ValueWorkshop" name="4-Phase Value Workshop">
+      <bpmn:incoming>Flow_ToWorkshop</bpmn:incoming>
+      <bpmn:outgoing>Flow_Workshop_Merge</bpmn:outgoing>
+
+      <bpmn:startEvent id="Event_WorkshopStart" name="Start Workshop">
+        <bpmn:outgoing>Flow_WS_Phase1</bpmn:outgoing>
+      </bpmn:startEvent>
+
+      <!-- Phase 1: Diagnosis -->
+      <bpmn:userTask id="Task_Phase1_Diagnosis" name="Fase 1: Diagnóstico" camunda:assignee="${vendedorResponsavel}">
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="currentChallenges" label="Desafios Atuais" type="string" />
+            <camunda:formField id="painPoints" label="Pontos de Dor" type="string" />
+            <camunda:formField id="impactMetrics" label="Métricas de Impacto" type="string" />
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_WS_Phase1</bpmn:incoming>
+        <bpmn:outgoing>Flow_WS_Phase2</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <!-- Phase 2: Vision -->
+      <bpmn:userTask id="Task_Phase2_Vision" name="Fase 2: Visão de Futuro" camunda:assignee="${vendedorResponsavel}">
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="futureState" label="Estado Futuro Desejado" type="string" />
+            <camunda:formField id="transformationGoals" label="Objetivos de Transformação" type="string" />
+            <camunda:formField id="kpis" label="KPIs Alvo" type="string" />
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_WS_Phase2</bpmn:incoming>
+        <bpmn:outgoing>Flow_WS_Phase3</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <!-- Phase 3: Roadmap -->
+      <bpmn:userTask id="Task_Phase3_Roadmap" name="Fase 3: Roadmap de Implementação" camunda:assignee="${vendedorResponsavel}">
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="implementationPhases" label="Fases de Implementação" type="string" />
+            <camunda:formField id="milestones" label="Marcos Principais" type="string" />
+            <camunda:formField id="timeline" label="Timeline" type="string" />
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_WS_Phase3</bpmn:incoming>
+        <bpmn:outgoing>Flow_WS_Phase4</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <!-- Phase 4: Investment -->
+      <bpmn:userTask id="Task_Phase4_Investment" name="Fase 4: Análise de Investimento" camunda:assignee="${vendedorResponsavel}">
+        <bpmn:extensionElements>
+          <camunda:formData>
+            <camunda:formField id="investmentRequired" label="Investimento Necessário" type="long" />
+            <camunda:formField id="roi" label="ROI Projetado" type="string" />
+            <camunda:formField id="paybackPeriod" label="Período de Payback" type="string" />
+            <camunda:formField id="businessCase" label="Business Case" type="string" />
+          </camunda:formData>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_WS_Phase4</bpmn:incoming>
+        <bpmn:outgoing>Flow_WS_End</bpmn:outgoing>
+      </bpmn:userTask>
+
+      <bpmn:endEvent id="Event_WorkshopEnd" name="Workshop Complete">
+        <bpmn:incoming>Flow_WS_End</bpmn:incoming>
+      </bpmn:endEvent>
+
+      <bpmn:sequenceFlow id="Flow_WS_Phase1" sourceRef="Event_WorkshopStart" targetRef="Task_Phase1_Diagnosis" />
+      <bpmn:sequenceFlow id="Flow_WS_Phase2" sourceRef="Task_Phase1_Diagnosis" targetRef="Task_Phase2_Vision" />
+      <bpmn:sequenceFlow id="Flow_WS_Phase3" sourceRef="Task_Phase2_Vision" targetRef="Task_Phase3_Roadmap" />
+      <bpmn:sequenceFlow id="Flow_WS_Phase4" sourceRef="Task_Phase3_Roadmap" targetRef="Task_Phase4_Investment" />
+      <bpmn:sequenceFlow id="Flow_WS_End" sourceRef="Task_Phase4_Investment" targetRef="Event_WorkshopEnd" />
+
+    </bpmn:subProcess>
+
+    <!-- Merge Gateway -->
+    <bpmn:exclusiveGateway id="Gateway_MergeValueDemo" name="Merge">
+      <bpmn:incoming>Flow_Pilot_Merge</bpmn:incoming>
+      <bpmn:incoming>Flow_Workshop_Merge</bpmn:incoming>
+      <bpmn:outgoing>Flow_Merge_GenerateReport</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Generate Value Report -->
+    <bpmn:serviceTask id="Task_GenerateValueReport" name="Gerar Relatório de Valor" camunda:type="external" camunda:topic="generate-value-report">
+      <bpmn:incoming>Flow_Merge_GenerateReport</bpmn:incoming>
+      <bpmn:outgoing>Flow_Report_UpdateCRM</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Update CRM -->
+    <bpmn:serviceTask id="Task_UpdateCRM_V3" name="Atualizar CRM" camunda:type="external" camunda:topic="crm-update-value">
+      <bpmn:incoming>Flow_Report_UpdateCRM</bpmn:incoming>
+      <bpmn:outgoing>Flow_CRM_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- End Event -->
+    <bpmn:endEvent id="Event_ValueDemoEnd_V3" name="Demonstração V3 Concluída">
+      <bpmn:incoming>Flow_CRM_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_Start_PilotDecision" sourceRef="Event_ValueDemoStart_V3" targetRef="Gateway_PilotDecision" />
+
+    <bpmn:sequenceFlow id="Flow_ToPilot" name="Sim" sourceRef="Gateway_PilotDecision" targetRef="Task_SelectPilotType">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${pilotRequested == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ToWorkshop" name="Não" sourceRef="Gateway_PilotDecision" targetRef="SubProcess_ValueWorkshop">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${pilotRequested == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Pilot_Execute" sourceRef="Task_SelectPilotType" targetRef="Task_ExecutePilot" />
+    <bpmn:sequenceFlow id="Flow_Pilot_Merge" sourceRef="Task_ExecutePilot" targetRef="Gateway_MergeValueDemo" />
+    <bpmn:sequenceFlow id="Flow_Workshop_Merge" sourceRef="SubProcess_ValueWorkshop" targetRef="Gateway_MergeValueDemo" />
+    <bpmn:sequenceFlow id="Flow_Merge_GenerateReport" sourceRef="Gateway_MergeValueDemo" targetRef="Task_GenerateValueReport" />
+    <bpmn:sequenceFlow id="Flow_Report_UpdateCRM" sourceRef="Task_GenerateValueReport" targetRef="Task_UpdateCRM_V3" />
+    <bpmn:sequenceFlow id="Flow_CRM_End" sourceRef="Task_UpdateCRM_V3" targetRef="Event_ValueDemoEnd_V3" />
+
+  </bpmn:process>
+
+  <!-- BPMN Diagram -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ValueDemo_V3">
+    <bpmndi:BPMNPlane id="BPMNPlane_ValueDemo_V3" bpmnElement="Process_ValueDemo_V3">
+
+      <bpmndi:BPMNShape id="Event_ValueDemoStart_V3_di" bpmnElement="Event_ValueDemoStart_V3">
+        <dc:Bounds x="180" y="220" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_PilotDecision_di" bpmnElement="Gateway_PilotDecision" isMarkerVisible="true">
+        <dc:Bounds x="270" y="213" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_SelectPilotType_di" bpmnElement="Task_SelectPilotType">
+        <dc:Bounds x="370" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ExecutePilot_di" bpmnElement="Task_ExecutePilot">
+        <dc:Bounds x="520" y="100" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="SubProcess_ValueWorkshop_di" bpmnElement="SubProcess_ValueWorkshop" isExpanded="true">
+        <dc:Bounds x="370" y="280" width="480" height="200" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_MergeValueDemo_di" bpmnElement="Gateway_MergeValueDemo" isMarkerVisible="true">
+        <dc:Bounds x="900" y="213" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_GenerateValueReport_di" bpmnElement="Task_GenerateValueReport">
+        <dc:Bounds x="1000" y="198" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_UpdateCRM_V3_di" bpmnElement="Task_UpdateCRM_V3">
+        <dc:Bounds x="1150" y="198" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Event_ValueDemoEnd_V3_di" bpmnElement="Event_ValueDemoEnd_V3">
+        <dc:Bounds x="1302" y="220" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_PilotDecision_di" bpmnElement="Flow_Start_PilotDecision">
+        <di:waypoint x="216" y="238" />
+        <di:waypoint x="270" y="238" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_ToPilot_di" bpmnElement="Flow_ToPilot">
+        <di:waypoint x="295" y="213" />
+        <di:waypoint x="295" y="140" />
+        <di:waypoint x="370" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_ToWorkshop_di" bpmnElement="Flow_ToWorkshop">
+        <di:waypoint x="295" y="263" />
+        <di:waypoint x="295" y="380" />
+        <di:waypoint x="370" y="380" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Pilot_Execute_di" bpmnElement="Flow_Pilot_Execute">
+        <di:waypoint x="470" y="140" />
+        <di:waypoint x="520" y="140" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Pilot_Merge_di" bpmnElement="Flow_Pilot_Merge">
+        <di:waypoint x="620" y="140" />
+        <di:waypoint x="925" y="140" />
+        <di:waypoint x="925" y="213" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Workshop_Merge_di" bpmnElement="Flow_Workshop_Merge">
+        <di:waypoint x="850" y="380" />
+        <di:waypoint x="925" y="380" />
+        <di:waypoint x="925" y="263" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Merge_GenerateReport_di" bpmnElement="Flow_Merge_GenerateReport">
+        <di:waypoint x="950" y="238" />
+        <di:waypoint x="1000" y="238" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Report_UpdateCRM_di" bpmnElement="Flow_Report_UpdateCRM">
+        <di:waypoint x="1100" y="238" />
+        <di:waypoint x="1150" y="238" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_CRM_End_di" bpmnElement="Flow_CRM_End">
+        <di:waypoint x="1250" y="238" />
+        <di:waypoint x="1302" y="238" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>
